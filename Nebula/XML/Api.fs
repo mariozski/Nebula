@@ -91,11 +91,15 @@ type Api(baseUrl, apiKey:APIKey, cache:ICache) =
     member x.AccountStatus() =
         API.Account.Calls.AccountStatus (x.QueryResult "/account/AccountStatus.xml.aspx" [])
     
-    member x.APIKeyInfo() =
+    member x.AccountAPIKeyInfo() =
         API.Account.Calls.APIKeyInfo (x.QueryResult "/account/APIKeyInfo.xml.aspx" [])
 
-    member x.Characters() =
+    member x.AccountCharacters() =
         API.Account.Calls.Characters (x.QueryResult "/account/Characters.xml.aspx" [])
 
+    member x.MapFactionalWarfareSystems() =
+        API.Map.Calls.FacWarSystems (x.QueryResult "/map/FacWarSystems.xml.aspx" [])
 
+    member x.MapJumps() =
+        API.Map.Calls.Jumps (x.QueryResult "/map/Jumps.xml.aspx" [])
 
