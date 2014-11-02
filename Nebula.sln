@@ -9,6 +9,8 @@ Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NebulaClient", "NebulaClien
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "NebulaCsClient", "NebulaCsClient\NebulaCsClient.csproj", "{CEFE152C-0BEC-466A-8FBE-F742E8C93A9E}"
 EndProject
+Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nebula.Cache", "Nebula.Cache\Nebula.Cache.fsproj", "{70C39700-BD73-4AAE-ACA5-A20D2E00287C}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -27,6 +29,10 @@ Global
 		{CEFE152C-0BEC-466A-8FBE-F742E8C93A9E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{CEFE152C-0BEC-466A-8FBE-F742E8C93A9E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{CEFE152C-0BEC-466A-8FBE-F742E8C93A9E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{70C39700-BD73-4AAE-ACA5-A20D2E00287C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{70C39700-BD73-4AAE-ACA5-A20D2E00287C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{70C39700-BD73-4AAE-ACA5-A20D2E00287C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{70C39700-BD73-4AAE-ACA5-A20D2E00287C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

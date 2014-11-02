@@ -1,4 +1,4 @@
-﻿namespace Nebula.Cache
+﻿namespace Nebula
 
 open System
 open System.Xml.Linq
