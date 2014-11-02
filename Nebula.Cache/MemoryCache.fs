@@ -13,13 +13,17 @@ type MemoryCache private() =
             let value = cache.Get(key)
             match value with
             | null -> None
-            | _ -> printfn "Reading from cache %s" key
-                   let casted = value :?> (XElement * DateTimeOffset)              
+            | _ -> let casted = value :?> (XElement * DateTimeOffset)              
+#if DEBUG
+                   printfn "\nReading from cache %s\n" key
+#endif
                    Some(fst casted)
 
         member x.Set key value expiration =
             let cacheExpiration = DateTimeOffset.Now + expiration
-            printfn "Setting cache %s" key
+#if DEBUG
+            printfn "\nSetting cache %s\n" key
+#endif
             cache.Set(key, (value, cacheExpiration), cacheExpiration)
 
     /// <summary>

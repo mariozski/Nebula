@@ -15,13 +15,17 @@ type RedisCache(redisConnectionString:string) =
             let value = db.StringGet(RedisKey.op_Implicit key)
             match value.IsNullOrEmpty with
             | true -> None
-            | false -> printfn "Reading from cache %s" key            
-                       let value = XElement.Parse(string(value))
+            | false -> let value = XElement.Parse(string(value))
+#if DEBUG
+                       printfn "Reading from cache %s" key            
+#endif
                        Some(value)
 
         member x.Set key value expiration =
             let db = redis.GetDatabase()
             let cacheExpiration = DateTimeOffset.Now + expiration
+#if DEBUG
             printfn "Setting cache %s" key
+#endif
             db.StringSet(RedisKey.op_Implicit(key), RedisValue.op_Implicit(string(value)), new Nullable<TimeSpan>(expiration)) |> ignore
 
