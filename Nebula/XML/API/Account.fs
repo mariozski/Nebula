@@ -1,4 +1,4 @@
-﻿namespace Nebula.API.Account
+﻿namespace Nebula.XML.API.Account
 
 module Records = 
 

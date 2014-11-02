@@ -1,5 +1,6 @@
-﻿namespace Nebula
+﻿namespace Nebula.XML
 
+open Nebula.Cache
 open System
 open System.Net
 open System.Xml.Linq

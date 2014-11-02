@@ -1,4 +1,4 @@
-﻿namespace Nebula
+﻿namespace Nebula.XML
 
 open FSharpx.Collections
 
