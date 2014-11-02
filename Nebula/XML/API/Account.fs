@@ -3,10 +3,7 @@
 module Records = 
 
     open System
-
-    let internal genericToString (x:obj) = 
-        let t = x.GetType()
-        (t.GetProperties() |> Array.fold (fun acc prop -> acc + prop.Name + "=" + string(prop.GetValue(x, null)) + ";") "").TrimEnd(';')
+    open Nebula.XML.API.Shared
 
     type AccountStatus = 
         { PaidUntil:DateTime; CreateDate:DateTime; LogonCount:int; LogonMinutes:int }
@@ -24,6 +21,10 @@ module Records =
         override x.ToString() = 
             genericToString x
 
+    type Character = 
+        { Name:string; CharacterId:int; CorporationId:int; CorporationName:string; AllianceId:int; AllianceName:string; FactionId:int; FactionName:string }
+        override x.ToString() = 
+            genericToString x
 
 module internal Calls =
 
@@ -53,6 +54,13 @@ module internal Calls =
         </key>
       </result>""", SampleIsList=true>
 
+    type CharactersResult = XmlProvider<"""<result>
+    <rowset name="characters" key="characterID" columns="name,characterID,corporationName,corporationID,allianceID,allianceName,factionID,factionName">
+      <row name="Alexis Prey" characterID="1365215823" corporationName="Puppies To the Rescue" corporationID="238510404" allianceID="9999" allianceName="Eve-ID Puppies Inc." factionID="666" factionName="Eve-ID Faction"/>
+      <row name="Alexis Prey" characterID="1365215823" corporationName="Puppies To the Rescue" corporationID="238510404" allianceID="9999" allianceName="Eve-ID Puppies Inc." factionID="666" factionName="Eve-ID Faction"/>
+    </rowset>
+  </result>""">
+
     let AccountStatus xmlResult =
         let data = AccountStatusResponse.Parse(xmlResult)
         { PaidUntil = data.PaidUntil; CreateDate = data.CreateDate; LogonCount = data.LogonCount; LogonMinutes = data.LogonMinutes }
@@ -66,3 +74,10 @@ module internal Calls =
                     |> List.ofSeq
 
         { AccessMask = data.Key.AccessMask; Type = data.Key.Type; Expires = data.Key.Expires; Rows = rows }
+
+    let Characters xmlResult =
+        let data = CharactersResult.Parse(xmlResult)
+        data.Rowset.Rows
+        |> Seq.map (fun x -> { Name = x.Name; CharacterId = x.CharacterId; CorporationId = x.CorporationId; CorporationName = x.CorporationName;
+                               AllianceId = x.AllianceId; AllianceName = x.AllianceName; FactionId = x.FactionId; FactionName = x.FactionName })
+        |> List.ofSeq

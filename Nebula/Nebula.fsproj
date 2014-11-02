@@ -52,6 +52,7 @@
     <Compile Include="AssemblyInfo.fs" />
     <None Include="packages.config" />
     <Compile Include="ICache.fs" />
+    <Compile Include="XML\API\Shared.fs" />
     <Compile Include="XML\API\Account.fs" />
     <Compile Include="XML\APIKey.fs" />
     <Compile Include="XML\Api.fs" />

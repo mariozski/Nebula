@@ -94,5 +94,8 @@ type Api(baseUrl, apiKey:APIKey, cache:ICache) =
     member x.APIKeyInfo() =
         API.Account.Calls.APIKeyInfo (x.QueryResult "/account/APIKeyInfo.xml.aspx" [])
 
+    member x.Characters() =
+        API.Account.Calls.Characters (x.QueryResult "/account/Characters.xml.aspx" [])
+
 
 
