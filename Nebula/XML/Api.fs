@@ -103,3 +103,8 @@ type Api(baseUrl, apiKey:APIKey, cache:ICache) =
     member x.MapJumps() =
         API.Map.Calls.Jumps (x.QueryResult "/map/Jumps.xml.aspx" [])
 
+    member x.MapKills() =
+        API.Map.Calls.Kills (x.QueryResult "/map/Kills.xml.aspx" [])
+
+    member x.MapSovereignty() =
+        API.Map.Calls.Sovereignty (x.QueryResult "/map/Sovereignty.xml.aspx" [])
