@@ -24,7 +24,7 @@ exception EveApiException of int * string
 /// This class is main class in the library allowing to
 /// connect to EVE Online API (XML) and operate on it's methods.
 /// </summary>
-type EveApi(baseUrl, apiKey:APIKey, cache:ICache) = 
+type Api(baseUrl, apiKey:APIKey, cache:ICache) = 
     
     /// <summary>
     /// Base url to EVE Online API backend.
@@ -53,7 +53,7 @@ type EveApi(baseUrl, apiKey:APIKey, cache:ICache) =
             try
                 async {
                     let webClient = new WebClient()
-                    let nvc = [ "keyID", string(apiKey.KeyID); "vCode", apiKey.VerificationCode ] 
+                    let nvc = [ "keyID", string(apiKey.KeyId); "vCode", apiKey.VerificationCode ] 
                               |> List.append additionalParameters
                               |> NameValueCollection.ofSeq 
 
@@ -68,7 +68,7 @@ type EveApi(baseUrl, apiKey:APIKey, cache:ICache) =
         let addString = additionalParameters |> List.fold (fun acc x -> acc + "||" + 
                                                                         match x with
                                                                         | (a, b) -> a + "|" + b) ""
-        let cacheKey = path + string(apiKey.KeyID) + apiKey.VerificationCode + addString
+        let cacheKey = path + string(apiKey.KeyId) + apiKey.VerificationCode + addString
         // get xml data for query
         let xml = match x.Cache.Get(cacheKey) with
                     | Some(result) -> result

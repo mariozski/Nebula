@@ -1,6 +1,8 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
-# Visual Studio 2012
+# Visual Studio 2013
+VisualStudioVersion = 12.0.30723.0
+MinimumVisualStudioVersion = 10.0.40219.1
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "Nebula", "Nebula\Nebula.fsproj", "{1837BDA5-BA5F-482C-A3B4-E7DC2D0F5238}"
 EndProject
 Project("{F2A71F9B-5D33-465A-A702-920D77279786}") = "NebulaClient", "NebulaClient\NebulaClient.fsproj", "{CB10DCF0-417F-48A5-AAFF-68549CB165EF}"

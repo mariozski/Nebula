@@ -2,10 +2,9 @@
 
 open FSharpx.Collections
 
-type APIKey(keyID:int, vCode:string) =
-    member x.KeyID = keyID
-    member x.VerificationCode = vCode
+type APIKey = 
+    { KeyId:int; VerificationCode:string }
     member x.ToNameValueCollection = 
-        [ "keyID", string(x.KeyID);
+        [ "keyID", string(x.KeyId);
           "vCode", x.VerificationCode ]
         |> NameValueCollection.ofSeq
