@@ -68,10 +68,7 @@ type EveApi(baseUrl, apiKey:APIKey, cache:ICache) =
         let addString = additionalParameters |> List.fold (fun acc x -> acc + "||" + 
                                                                         match x with
                                                                         | (a, b) -> a + "|" + b) ""
-
         let cacheKey = path + string(apiKey.KeyID) + apiKey.VerificationCode + addString
-                       
-
         // get xml data for query
         let xml = match x.Cache.Get(cacheKey) with
                     | Some(result) -> result
@@ -91,8 +88,10 @@ type EveApi(baseUrl, apiKey:APIKey, cache:ICache) =
         string(xml)
 
     member x.AccountStatus() =
-        API.Account.AccountStatus (x.QueryResult "/account/AccountStatus.xml.aspx" [])
+        API.Account.Calls.AccountStatus (x.QueryResult "/account/AccountStatus.xml.aspx" [])
     
+    member x.APIKeyInfo() =
+        API.Account.Calls.APIKeyInfo (x.QueryResult "/account/APIKeyInfo.xml.aspx" [])
 
 
 
