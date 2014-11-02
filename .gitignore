@@ -157,5 +157,6 @@ $RECYCLE.BIN/
 
 NebulaClient/
 NebulaCsClient/
+!Nebula.Cache/
 
 
