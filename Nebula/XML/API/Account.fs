@@ -8,7 +8,10 @@ module Records =
         let t = x.GetType()
         (t.GetProperties() |> Array.fold (fun acc prop -> acc + prop.Name + "=" + string(prop.GetValue(x, null)) + ";") "").TrimEnd(';')
 
-    type AccountStatus = { PaidUntil:DateTime; CreateDate:DateTime; LogonCount:int; LogonMinutes:int }
+    type AccountStatus = 
+        { PaidUntil:DateTime; CreateDate:DateTime; LogonCount:int; LogonMinutes:int }
+        override x.ToString() = 
+            genericToString x
 
     type APIKeyInfoRow = 
         { CharacterId:int; CharacterName:string; CorporationId:int; CorporationName:string;

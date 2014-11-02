@@ -53,6 +53,10 @@
       <Private>True</Private>
     </Reference>
     <Reference Include="mscorlib" />
+    <Reference Include="StackExchange.Redis">
+      <HintPath>..\packages\StackExchange.Redis.1.0.371\lib\net45\StackExchange.Redis.dll</HintPath>
+      <Private>True</Private>
+    </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
     <Reference Include="System.Numerics" />
@@ -66,6 +70,7 @@
     <Compile Include="Cache\ICache.fs" />
     <Compile Include="Cache\MemoryCache.fs" />
     <Compile Include="Cache\NoCache.fs" />
+    <Compile Include="Cache\RedisCache.fs" />
     <Compile Include="XML\API\Account.fs" />
     <Compile Include="XML\APIKey.fs" />
     <Compile Include="XML\Api.fs" />
