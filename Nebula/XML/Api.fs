@@ -20,49 +20,51 @@ type ApiResponse = XmlProvider<"""<root><eveapi version="2">
                                    </eveapi></root>""", SampleIsList=true>
 
 exception EveApiException of int * string
+exception ApiKeyRequiredException
 
-/// <summary>
-/// This class is main class in the library allowing to
-/// connect to EVE Online API (XML) and operate on it's methods.
-/// </summary>
-type Api(baseUrl, apiKey:APIKey, cache:ICache) = 
-    
+module ApiFunctions =
+
     let getNonAuthenticatedWebClient queryParams = 
         let webClient = new WebClient()
         webClient.QueryString <- queryParams |> NameValueCollection.ofSeq
         webClient
 
-    let getAuthenticatedWebClient queryParams = 
-        let webClient = new WebClient()
-        let nvc = [ "keyID", string(apiKey.KeyId); "vCode", apiKey.VerificationCode ] 
-                  |> NameValueCollection.ofSeq 
+    let getAuthenticatedWebClient (apiKey:APIKey option) queryParams = 
+        match apiKey with
+        | Some(key) ->
+            let webClient = new WebClient()
+            let nvc = [ "keyID", string(key.KeyId); "vCode", key.VerificationCode ] 
+                        |> List.append queryParams
+                        |> NameValueCollection.ofSeq 
 
-        webClient.QueryString <- nvc
-        webClient
+            webClient.QueryString <- nvc
+            webClient
+        | None -> raise ApiKeyRequiredException
 
-    /// <summary>
-    /// Queries EVE Online API for given request type and parameters
+        /// Queries EVE Online API for given request type and parameters
     /// </summary>
     /// <param name="requestType"></param>
     /// <param name="id"></param>
     /// <param name="key"></param>
     /// <param name="additionalParameters"></param>
-    let queryApiServer path (webClient:WebClient) = 
+    let queryApiServer (cache:ICache) url (webClient:WebClient) = 
         let getData() = 
             try
                 async {
-                    let! data = webClient.AsyncDownloadString(new Uri(baseUrl + path))
+                    let! data = webClient.AsyncDownloadString(url)
                     return data
                 } |> Async.RunSynchronously
             with
             | :? WebException as ex ->
                 (new System.IO.StreamReader(ex.Response.GetResponseStream())).ReadToEnd()
 
-        let addString = webClient.QueryString |> NameValueCollection.toList 
+        let cacheKey = webClient.QueryString 
+                        |> NameValueCollection.toList 
+                        |> List.append ["url", url.ToString()]
                         |> List.fold (fun acc x -> acc + "||" + 
                                                    match x with
                                                    | (a, b) -> a + "|" + b) ""
-        let cacheKey = path + string(apiKey.KeyId) + apiKey.VerificationCode + addString
+
         // get xml data for query
         let xml = match cache.Get(cacheKey) with
                     | Some(result) -> result
@@ -81,7 +83,17 @@ type Api(baseUrl, apiKey:APIKey, cache:ICache) =
         // return xml entry of result
         string(xml)
 
-        /// <summary>
+open ApiFunctions
+
+/// <summary>
+/// This class is main class in the library allowing to
+/// connect to EVE Online API (XML) and operate on it's methods.
+/// </summary>
+type Api(baseUrl, cache:ICache, ?apiKey:APIKey) =
+
+    let getFullUrl url = 
+        new Uri(baseUrl + url)
+    
     /// Base url to EVE Online API backend.
     /// </summary>
     member x.BaseUrl = baseUrl
@@ -97,36 +109,41 @@ type Api(baseUrl, apiKey:APIKey, cache:ICache) =
     member x.APIKey = apiKey
 
     member x.AccountStatus() =
-        getAuthenticatedWebClient [] 
-        |> queryApiServer "/account/AccountStatus.xml.aspx" 
+        ApiFunctions.getAuthenticatedWebClient x.APIKey [] 
+        |> ApiFunctions.queryApiServer x.Cache (getFullUrl "/account/AccountStatus.xml.aspx")
         |> API.Account.Calls.AccountStatus 
-    
+
     member x.AccountAPIKeyInfo() =
-        getAuthenticatedWebClient [] 
-        |> queryApiServer "/account/APIKeyInfo.xml.aspx"
+        getAuthenticatedWebClient x.APIKey [] 
+        |> queryApiServer x.Cache (getFullUrl "/account/APIKeyInfo.xml.aspx")
         |> API.Account.Calls.APIKeyInfo 
 
     member x.AccountCharacters() =
-        getAuthenticatedWebClient [] 
-        |> queryApiServer "/account/Characters.xml.aspx"
+        getAuthenticatedWebClient x.APIKey [] 
+        |> queryApiServer x.Cache (getFullUrl "/account/Characters.xml.aspx")
         |> API.Account.Calls.Characters
 
     member x.MapFactionalWarfareSystems() =
         getNonAuthenticatedWebClient [] 
-        |> queryApiServer "/map/FacWarSystems.xml.aspx"
+        |> queryApiServer x.Cache (getFullUrl "/map/FacWarSystems.xml.aspx")
         |> API.Map.Calls.FacWarSystems
 
     member x.MapJumps() =
         getNonAuthenticatedWebClient [] 
-        |> queryApiServer "/map/Jumps.xml.aspx"
+        |> queryApiServer x.Cache (getFullUrl "/map/Jumps.xml.aspx")
         |> API.Map.Calls.Jumps
 
     member x.MapKills() =
         getNonAuthenticatedWebClient [] 
-        |> queryApiServer "/map/Kills.xml.aspx"
+        |> queryApiServer x.Cache (getFullUrl "/map/Kills.xml.aspx")
         |> API.Map.Calls.Kills
 
     member x.MapSovereignty() =
         getNonAuthenticatedWebClient [] 
-        |> queryApiServer "/map/Sovereignty.xml.aspx"
+        |> queryApiServer x.Cache (getFullUrl "/map/Sovereignty.xml.aspx")
         |> API.Map.Calls.Sovereignty
+
+    member x.CharAccountBalance (characterId:int) =
+        getAuthenticatedWebClient x.APIKey [ "characterID", string(characterId) ] 
+        |> queryApiServer x.Cache (getFullUrl "/char/AccountBalance.xml.aspx")
+        |> API.Character.Calls.AccountBalance

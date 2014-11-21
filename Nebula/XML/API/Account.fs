@@ -22,7 +22,7 @@ module Records =
             genericToString x
 
     type Character = 
-        { Name:string; CharacterId:int; CorporationId:int; CorporationName:string; AllianceId:int; AllianceName:string; FactionId:int; FactionName:string }
+        { Name:string; CharacterId:int; CorporationId:int; CorporationName:string; AllianceId:int; AllianceName:string; FactionId:int; FactionName:string}
         override x.ToString() = 
             genericToString x
 
