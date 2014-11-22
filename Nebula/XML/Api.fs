@@ -52,12 +52,6 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
             webClient
         | None -> raise ApiKeyRequiredException
 
-    /// Queries EVE Online API for given request type and parameters
-    /// </summary>
-    /// <param name="requestType"></param>
-    /// <param name="id"></param>
-    /// <param name="key"></param>
-    /// <param name="additionalParameters"></param>
     let queryApiServer url (webClient: WebClient) = 
         let getUri() =
             let baseUrl = match apiServer with
@@ -127,6 +121,8 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns status of account. Requires API key.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
     member x.AccountStatus() =
         authenticatedCall "/account/AccountStatus.xml.aspx" emptyParams
         |> API.Account.Calls.AccountStatus 
@@ -134,6 +130,8 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns API key info. Requires API key.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
     member x.AccountAPIKeyInfo() =
         authenticatedCall "/account/APIKeyInfo.xml.aspx" emptyParams
         |> API.Account.Calls.APIKeyInfo 
@@ -141,6 +139,8 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns characters on account. Requires API key.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
     member x.AccountCharacters() =
         let characters = authenticatedCall "/account/Characters.xml.aspx" emptyParams
                          |> API.Account.Calls.Characters
@@ -153,6 +153,7 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns map for factional warfare.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
     member x.MapFactionalWarfareSystems() =
         nonAuthenticatedCall "/map/FacWarSystems.xml.aspx" emptyParams
         |> API.Map.Calls.FacWarSystems
@@ -160,6 +161,7 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns jumps.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
     member x.MapJumps() =
         nonAuthenticatedCall "/map/Jumps.xml.aspx" emptyParams
         |> API.Map.Calls.Jumps
@@ -167,6 +169,7 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns kills.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
     member x.MapKills() =
         nonAuthenticatedCall "/map/Kills.xml.aspx" emptyParams
         |> API.Map.Calls.Kills
@@ -174,6 +177,7 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <summary>
     /// Returns sovereignty data.
     /// </summary>
+    /// <exception cref="EveApiException"></exception>
     member x.MapSovereignty() =
         nonAuthenticatedCall "/map/Sovereignty.xml.aspx" emptyParams
         |> API.Map.Calls.Sovereignty
@@ -182,6 +186,8 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// Returns account balance for character. Requires API key.
     /// </summary>
     /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
     member x.CharAccountBalance (characterId:int) =
         authenticatedCall "/char/AccountBalance.xml.aspx" [ "characterID", string(characterId) ]
         |> API.Character.Calls.AccountBalance
@@ -211,6 +217,13 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
 [<System.Runtime.CompilerServices.Extension>]
 module CharacterExtensions =
     // C# way of adding extension methods...
+
+    /// <summary>
+    /// Returns account balance for character. Requires API key.
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
     [<System.Runtime.CompilerServices.Extension>]
     let AccountBalance(c : API.Account.Records.Character) = 
         let api = c.Api :?> Api
@@ -218,6 +231,12 @@ module CharacterExtensions =
 
     // F# way...
     type Nebula.XML.API.Account.Records.Character with
+        /// <summary>
+        /// Returns account balance for character. Requires API key.
+        /// </summary>
+        /// <param name="characterId">character id</param>
+        /// <exception cref="EveApiException"></exception>
+        /// <exception cref="ApiKeyRequiredException"></exception>
         member public x.AccountBalance() =
             let api = x.Api :?> Api
             api.CharAccountBalance x.CharacterId
