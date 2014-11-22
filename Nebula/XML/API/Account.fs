@@ -21,8 +21,20 @@ module Records =
         override x.ToString() = 
             genericToString x
 
-    type Character = 
-        { Name:string; CharacterId:int; CorporationId:int; CorporationName:string; AllianceId:int; AllianceName:string; FactionId:int; FactionName:string}
+    type Character(name, characterId, corporationId, corporationName, allianceId, allianceName, factionId, factionName) = 
+        let mutable api = null
+        member internal x.Api
+            with get() = api
+            and set(value) = api <- value 
+
+        member val Name:string = name 
+        member val CharacterId:int = characterId
+        member val CorporationId:int = corporationId
+        member val CorporationName:string = corporationName
+        member val AllianceId:int = allianceId
+        member val AllianceName:string = allianceName
+        member val FactionId:int = factionId
+        member val FactionName:string = factionName
         override x.ToString() = 
             genericToString x
 
@@ -78,6 +90,5 @@ module internal Calls =
     let Characters xmlResult =
         let data = CharactersResult.Parse(xmlResult)
         data.Rowset.Rows
-        |> Seq.map (fun x -> { Name = x.Name; CharacterId = x.CharacterId; CorporationId = x.CorporationId; CorporationName = x.CorporationName;
-                               AllianceId = x.AllianceId; AllianceName = x.AllianceName; FactionId = x.FactionId; FactionName = x.FactionName })
+        |> Seq.map (fun x -> new Character(x.Name, x.CharacterId, x.CorporationId, x.CorporationName, x.AllianceId, x.AllianceName, x.FactionId, x.FactionName))
         |> List.ofSeq

@@ -8,6 +8,14 @@ open FSharp.Data
 open FSharpx.Collections
 open FSharpx.Http
 
+
+exception EveApiException of int * string
+exception ApiKeyRequiredException
+
+type ApiServer =
+    | Tranquility = 0
+    | Singularity = 1
+
 type ApiResponse = XmlProvider<"""<root><eveapi version="2">
                                         <currentTime>2010-10-05 20:28:28</currentTime>
                                         <result></result>
@@ -19,17 +27,20 @@ type ApiResponse = XmlProvider<"""<root><eveapi version="2">
                                         <cachedUntil>2010-10-05 20:28:28</cachedUntil>
                                    </eveapi></root>""", SampleIsList=true>
 
-exception EveApiException of int * string
-exception ApiKeyRequiredException
+/// <summary>
+/// This class is main class in the library allowing to
+/// connect to EVE Online API (XML) and operate on it's methods.
+/// </summary>
+type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
 
-module ApiFunctions =
+    let emptyParams = []
 
     let getNonAuthenticatedWebClient queryParams = 
         let webClient = new WebClient()
         webClient.QueryString <- queryParams |> NameValueCollection.ofSeq
         webClient
 
-    let getAuthenticatedWebClient (apiKey:APIKey option) queryParams = 
+    let getAuthenticatedWebClient queryParams = 
         match apiKey with
         | Some(key) ->
             let webClient = new WebClient()
@@ -41,17 +52,24 @@ module ApiFunctions =
             webClient
         | None -> raise ApiKeyRequiredException
 
-        /// Queries EVE Online API for given request type and parameters
+    /// Queries EVE Online API for given request type and parameters
     /// </summary>
     /// <param name="requestType"></param>
     /// <param name="id"></param>
     /// <param name="key"></param>
     /// <param name="additionalParameters"></param>
-    let queryApiServer (cache:ICache) url (webClient:WebClient) = 
+    let queryApiServer url (webClient: WebClient) = 
+        let getUri() =
+            let baseUrl = match apiServer with
+                          | ApiServer.Singularity -> "https://api.testeveonline.com/"
+                          | ApiServer.Tranquility -> "https://api.eveonline.com/"
+                          | _ -> ""
+            new Uri(baseUrl + url)
+
         let getData() = 
             try
                 async {
-                    let! data = webClient.AsyncDownloadString(url)
+                    let! data = webClient.AsyncDownloadString(getUri())
                     return data
                 } |> Async.RunSynchronously
             with
@@ -83,20 +101,18 @@ module ApiFunctions =
         // return xml entry of result
         string(xml)
 
-open ApiFunctions
+    let authenticatedCall url parameters =
+        getAuthenticatedWebClient parameters
+        |> queryApiServer url 
+      
+    let nonAuthenticatedCall url parameters = 
+        getNonAuthenticatedWebClient parameters
+        |> queryApiServer url 
 
-/// <summary>
-/// This class is main class in the library allowing to
-/// connect to EVE Online API (XML) and operate on it's methods.
-/// </summary>
-type Api(baseUrl, cache:ICache, ?apiKey:APIKey) =
-
-    let getFullUrl url = 
-        new Uri(baseUrl + url)
-    
-    /// Base url to EVE Online API backend.
+    /// <summary>
+    /// API server 
     /// </summary>
-    member x.BaseUrl = baseUrl
+    member x.ApiServer = apiServer
 
     /// <summary>
     /// Instance of ICache responsbile for caching API requests.
@@ -104,46 +120,104 @@ type Api(baseUrl, cache:ICache, ?apiKey:APIKey) =
     member x.Cache = cache
 
     /// <summary>
-    /// Instance of APIKey used to query Eve Online API
+    /// Instance of APIKey used to query API server
     /// </summary>
     member x.APIKey = apiKey
 
+    /// <summary>
+    /// Returns status of account. Requires API key.
+    /// </summary>
     member x.AccountStatus() =
-        ApiFunctions.getAuthenticatedWebClient x.APIKey [] 
-        |> ApiFunctions.queryApiServer x.Cache (getFullUrl "/account/AccountStatus.xml.aspx")
+        authenticatedCall "/account/AccountStatus.xml.aspx" emptyParams
         |> API.Account.Calls.AccountStatus 
 
+    /// <summary>
+    /// Returns API key info. Requires API key.
+    /// </summary>
     member x.AccountAPIKeyInfo() =
-        getAuthenticatedWebClient x.APIKey [] 
-        |> queryApiServer x.Cache (getFullUrl "/account/APIKeyInfo.xml.aspx")
+        authenticatedCall "/account/APIKeyInfo.xml.aspx" emptyParams
         |> API.Account.Calls.APIKeyInfo 
 
+    /// <summary>
+    /// Returns characters on account. Requires API key.
+    /// </summary>
     member x.AccountCharacters() =
-        getAuthenticatedWebClient x.APIKey [] 
-        |> queryApiServer x.Cache (getFullUrl "/account/Characters.xml.aspx")
-        |> API.Account.Calls.Characters
+        let characters = authenticatedCall "/account/Characters.xml.aspx" emptyParams
+                         |> API.Account.Calls.Characters
 
+        for character in characters do
+            character.Api <- x
+
+        characters
+
+    /// <summary>
+    /// Returns map for factional warfare.
+    /// </summary>
     member x.MapFactionalWarfareSystems() =
-        getNonAuthenticatedWebClient [] 
-        |> queryApiServer x.Cache (getFullUrl "/map/FacWarSystems.xml.aspx")
+        nonAuthenticatedCall "/map/FacWarSystems.xml.aspx" emptyParams
         |> API.Map.Calls.FacWarSystems
 
+    /// <summary>
+    /// Returns jumps.
+    /// </summary>
     member x.MapJumps() =
-        getNonAuthenticatedWebClient [] 
-        |> queryApiServer x.Cache (getFullUrl "/map/Jumps.xml.aspx")
+        nonAuthenticatedCall "/map/Jumps.xml.aspx" emptyParams
         |> API.Map.Calls.Jumps
 
+    /// <summary>
+    /// Returns kills.
+    /// </summary>
     member x.MapKills() =
-        getNonAuthenticatedWebClient [] 
-        |> queryApiServer x.Cache (getFullUrl "/map/Kills.xml.aspx")
+        nonAuthenticatedCall "/map/Kills.xml.aspx" emptyParams
         |> API.Map.Calls.Kills
 
+    /// <summary>
+    /// Returns sovereignty data.
+    /// </summary>
     member x.MapSovereignty() =
-        getNonAuthenticatedWebClient [] 
-        |> queryApiServer x.Cache (getFullUrl "/map/Sovereignty.xml.aspx")
+        nonAuthenticatedCall "/map/Sovereignty.xml.aspx" emptyParams
         |> API.Map.Calls.Sovereignty
 
+    /// <summary>
+    /// Returns account balance for character. Requires API key.
+    /// </summary>
+    /// <param name="characterId">character id</param>
     member x.CharAccountBalance (characterId:int) =
-        getAuthenticatedWebClient x.APIKey [ "characterID", string(characterId) ] 
-        |> queryApiServer x.Cache (getFullUrl "/char/AccountBalance.xml.aspx")
+        authenticatedCall "/char/AccountBalance.xml.aspx" [ "characterID", string(characterId) ]
         |> API.Character.Calls.AccountBalance
+
+    /// <summary>
+    /// Creates API object for querying EVE Online XML backend. Using Tranquility server by default.
+    /// Some methods will throw <see cref="ApiKeyRequiredException">ApiKeyRequiredException</see> if they require API key to be executed.
+    /// </summary>
+    /// <param name="cache">ICache instance</param>
+    new(cache:Nebula.ICache) = Api(cache, None, ApiServer.Tranquility)
+
+    /// <summary>
+    /// Creates API object for querying EVE Online XML backend. Using Tranquility server by default.
+    /// </summary>
+    /// <param name="cache">ICache instance</param>
+    /// <param name="apiKey">API key</param>
+    new(cache:Nebula.ICache, apiKey:APIKey) = Api(cache, Some(apiKey), ApiServer.Tranquility)
+
+    /// <summary>
+    /// Creates API object for querying EVE Online XML backend.
+    /// </summary>
+    /// <param name="cache">ICache instance</param>
+    /// <param name="apiKey">API key</param>
+    /// <param name="apiServer">API server</param>
+    new(cache:Nebula.ICache, apiKey:APIKey, apiServer:ApiServer) = Api(cache, Some(apiKey), apiServer)
+
+[<System.Runtime.CompilerServices.Extension>]
+module CharacterExtensions =
+    // C# way of adding extension methods...
+    [<System.Runtime.CompilerServices.Extension>]
+    let AccountBalance(c : API.Account.Records.Character) = 
+        let api = c.Api :?> Api
+        api.CharAccountBalance c.CharacterId       
+
+    // F# way...
+    type Nebula.XML.API.Account.Records.Character with
+        member public x.AccountBalance() =
+            let api = x.Api :?> Api
+            api.CharAccountBalance x.CharacterId
