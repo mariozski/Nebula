@@ -192,6 +192,10 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
         authenticatedCall "/char/AccountBalance.xml.aspx" [ "characterID", string(characterId) ]
         |> API.Character.Calls.AccountBalance
 
+    member x.CharAssetList (characterId:int) =
+        authenticatedCall "/char/AssetList.xml.aspx" [ "characterID", string(characterId) ]
+        |> API.Character.Calls.AssetList
+
     /// <summary>
     /// Creates API object for querying EVE Online XML backend. Using Tranquility server by default.
     /// Some methods will throw <see cref="ApiKeyRequiredException">ApiKeyRequiredException</see> if they require API key to be executed.
