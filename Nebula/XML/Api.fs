@@ -192,6 +192,13 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
         authenticatedCall "/char/AccountBalance.xml.aspx" [ "characterID", string(characterId) ]
         |> API.Character.Calls.AccountBalance
 
+    /// <summary>
+    /// Returns asset list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
     member x.CharAssetList (characterId:int) =
         authenticatedCall "/char/AssetList.xml.aspx" [ "characterID", string(characterId) ]
         |> API.Character.Calls.AssetList
@@ -220,6 +227,7 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
 
 [<System.Runtime.CompilerServices.Extension>]
 module CharacterExtensions =
+    let apiCast (api:obj) = api :?> Api
     // C# way of adding extension methods...
 
     /// <summary>
@@ -230,8 +238,20 @@ module CharacterExtensions =
     /// <exception cref="ApiKeyRequiredException"></exception>
     [<System.Runtime.CompilerServices.Extension>]
     let AccountBalance(c : API.Account.Records.Character) = 
-        let api = c.Api :?> Api
-        api.CharAccountBalance c.CharacterId       
+        let api = c.Api |> apiCast 
+        api.CharAccountBalance c.CharacterId    
+        
+    /// <summary>
+    /// Returns asset list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    [<System.Runtime.CompilerServices.Extension>]    
+    let AssetList(c:API.Account.Records.Character) =
+        let api = c.Api |> apiCast 
+        api.CharAssetList c.CharacterId
 
     // F# way...
     type Nebula.XML.API.Account.Records.Character with
@@ -242,5 +262,16 @@ module CharacterExtensions =
         /// <exception cref="EveApiException"></exception>
         /// <exception cref="ApiKeyRequiredException"></exception>
         member public x.AccountBalance() =
-            let api = x.Api :?> Api
+            let api = x.Api |> apiCast 
             api.CharAccountBalance x.CharacterId
+        
+        /// <summary>
+        /// Returns asset list for character. Requires API key.
+        /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
+        /// </summary>
+        /// <param name="characterId">character id</param>
+        /// <exception cref="EveApiException"></exception>
+        /// <exception cref="ApiKeyRequiredException"></exception>
+        member public x.AssetList() =
+            let api = x.Api |> apiCast 
+            api.CharAssetList x.CharacterId

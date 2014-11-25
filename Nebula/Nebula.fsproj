@@ -52,6 +52,10 @@
     <Compile Include="AssemblyInfo.fs" />
     <None Include="packages.config" />
     <Compile Include="ICache.fs" />
+    <Compile Include="SDE\Items.fs" />
+    <Content Include="SDE\items.csv">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Compile Include="XML\API\Shared.fs" />
     <Compile Include="XML\API\Account.fs" />
     <Compile Include="XML\API\Map.fs" />

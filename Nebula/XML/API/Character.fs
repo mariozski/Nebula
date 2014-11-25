@@ -12,7 +12,8 @@ module Records =
 
     type Asset = 
         { ItemId:int64; LocationId:int64 option; TypeId:int; Quantity:int; Flag:int; 
-          Singleton:bool; RawQuantity:int option; Content:Asset list option }
+          Singleton:bool; RawQuantity:int option; Content:Asset list option;
+          Item:Nebula.SDE.Items.InvType option }
          override x.ToString() = 
             genericToString x
 
@@ -30,6 +31,7 @@ module internal Calls =
   </result>""">
 
     let AccountBalance xmlResult =
+
         let data = AccountBalanceResult.Parse(xmlResult)
         let row = data.Rowset.Row
         { AccountId = row.AccountId; AccountKey = row.AccountKey; Balance = row.Balance }
@@ -41,6 +43,12 @@ module internal Calls =
             let rows = query { for a in data.Elements(xn "row") do
                                select { ItemId = int64(a.Attribute(xn "itemID").Value);
                                         TypeId = int(a.Attribute(xn "typeID").Value);
+                                        Item = 
+                                               let find = 
+                                                let typeId = int64(a.Attribute(xn "typeID").Value)
+                                                Nebula.SDE.Items.getItem typeId
+                                               
+                                               find
                                         RawQuantity = if a.Attribute(xn "rawQuantity") <> null then
                                                         Some(int(a.Attribute(xn "rawQuantity").Value))
                                                       else None;
