@@ -43,12 +43,7 @@ module internal Calls =
             let rows = query { for a in data.Elements(xn "row") do
                                select { ItemId = int64(a.Attribute(xn "itemID").Value);
                                         TypeId = int(a.Attribute(xn "typeID").Value);
-                                        Item = 
-                                               let find = 
-                                                let typeId = int64(a.Attribute(xn "typeID").Value)
-                                                Nebula.SDE.Items.getItem typeId
-                                               
-                                               find
+                                        Item = Nebula.SDE.Items.getItem (int64(a.Attribute(xn "typeID").Value));
                                         RawQuantity = if a.Attribute(xn "rawQuantity") <> null then
                                                         Some(int(a.Attribute(xn "rawQuantity").Value))
                                                       else None;

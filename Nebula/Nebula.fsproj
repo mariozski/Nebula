@@ -53,22 +53,21 @@
     <None Include="packages.config" />
     <Compile Include="ICache.fs" />
     <Compile Include="SDE\Items.fs" />
-    <Content Include="SDE\items.csv">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
+    <EmbeddedResource Include="SDE\invTypes.csv.gz" />
     <Compile Include="XML\API\Shared.fs" />
     <Compile Include="XML\API\Account.fs" />
     <Compile Include="XML\API\Map.fs" />
     <Compile Include="XML\API\Character.fs" />
     <Compile Include="XML\APIKey.fs" />
     <Compile Include="XML\Api.fs" />
+    <Content Include="app.config" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="FSharp.Core, Version=$(TargetFSharpCoreVersion), Culture=neutral, PublicKeyToken=b03f5f7f11d50a3a">
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharp.Data">
-      <HintPath>..\packages\FSharp.Data.2.0.15\lib\net40\FSharp.Data.dll</HintPath>
+      <HintPath>..\packages\FSharp.Data.2.1.0\lib\net40\FSharp.Data.dll</HintPath>
       <Private>True</Private>
     </Reference>
     <Reference Include="FSharpx.Collections">
