@@ -204,6 +204,17 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
         |> API.Character.Calls.AssetList
 
     /// <summary>
+    /// Returns blueprints list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    member x.CharBlueprints (characterId:int) = 
+        authenticatedCall "char/Blueprints.xml.aspx" ["characterID", string(characterId)]
+        |> API.Character.Calls.Blueprints
+
+    /// <summary>
     /// Creates API object for querying EVE Online XML backend. Using Tranquility server by default.
     /// Some methods will throw <see cref="ApiKeyRequiredException">ApiKeyRequiredException</see> if they require API key to be executed.
     /// </summary>
@@ -227,6 +238,8 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
 
 [<System.Runtime.CompilerServices.Extension>]
 module CharacterExtensions =
+    open System.Runtime.CompilerServices
+
     let apiCast (api:obj) = api :?> Api
     // C# way of adding extension methods...
 
@@ -236,7 +249,7 @@ module CharacterExtensions =
     /// <param name="characterId">character id</param>
     /// <exception cref="EveApiException"></exception>
     /// <exception cref="ApiKeyRequiredException"></exception>
-    [<System.Runtime.CompilerServices.Extension>]
+    [<Extension>]
     let AccountBalance(c : API.Account.Records.Character) = 
         let api = c.Api |> apiCast 
         api.CharAccountBalance c.CharacterId    
@@ -248,10 +261,22 @@ module CharacterExtensions =
     /// <param name="characterId">character id</param>
     /// <exception cref="EveApiException"></exception>
     /// <exception cref="ApiKeyRequiredException"></exception>
-    [<System.Runtime.CompilerServices.Extension>]    
+    [<Extension>]    
     let AssetList(c:API.Account.Records.Character) =
         let api = c.Api |> apiCast 
         api.CharAssetList c.CharacterId
+
+    /// <summary>
+    /// Returns blueprints list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    [<Extension>]    
+    let Blueprints(c:API.Account.Records.Character) =
+        let api = c.Api |> apiCast 
+        api.CharBlueprints c.CharacterId
 
     // F# way...
     type Nebula.XML.API.Account.Records.Character with
@@ -275,3 +300,14 @@ module CharacterExtensions =
         member public x.AssetList() =
             let api = x.Api |> apiCast 
             api.CharAssetList x.CharacterId
+
+        /// <summary>
+        /// Returns blueprints list for character. Requires API key.
+        /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
+        /// </summary>
+        /// <param name="characterId">character id</param>
+        /// <exception cref="EveApiException"></exception>
+        /// <exception cref="ApiKeyRequiredException"></exception>
+        member public x.Blueprints() =
+            let api = x.Api |> apiCast 
+            api.CharBlueprints x.CharacterId
