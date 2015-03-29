@@ -42,53 +42,56 @@ module internal Calls =
 
     open System
     open FSharp.Data
+    open EkonBenefits.FSharp.Dynamic
     open Records
+    open ApiTypes
+    open Nebula.XML.API.Shared
 
-    type AccountStatusResponse = XmlProvider<"""<result><paidUntil>2011-01-01 00:00:00</paidUntil>
-        <createDate>2004-01-01 00:00:00</createDate>
-        <logonCount>9999</logonCount>
-        <logonMinutes>9999</logonMinutes></result>""">
+    let AccountStatus (xmlResult:XmlEveResponse) =
+        (fun result ->
+            let a = result?paidUntil
+            let b= result?createDate
+            let c= result?logonCount
+            let d = result?logonMinutes
+            { PaidUntil = result?paidUntil; 
+              CreateDate = result?createDate; 
+              LogonCount = result?logonCount; 
+              LogonMinutes = result?logonMinutes })
+        |> handleResult xmlResult
 
-    type APIKeyInfoResult = XmlProvider<"""<result>
-        <key accessMask="8388608" type="Character" expires="2011-09-11 00:00:00">
-          <rowset name="characters" key="characterID" columns="characterID,characterName,corporationID,corporationName,allianceID,allianceName,factionID,factionName">
-            <row characterID="126891489" characterName="Dragonaire" corporationID="643668601" corporationName="Here there be Dragons" allianceID="0" allianceName="" factionID="0" factionName=""/>
-            <row characterID="587971565" characterName="Dragon Run1" corporationID="643668601" corporationName="Here there be Dragons" allianceID="0" allianceName="" factionID="0" factionName=""/>
-          </rowset>
-        </key>
-      </result>
-      <result>
-        <key accessMask="8388608" type="Character" expires="">
-          <rowset name="characters" key="characterID" columns="characterID,characterName,corporationID,corporationName,allianceID,allianceName,factionID,factionName">
-            <row characterID="126891489" characterName="Dragonaire" corporationID="643668601" corporationName="Here there be Dragons" allianceID="0" allianceName="" factionID="0" factionName=""/>
-            <row characterID="587971565" characterName="Dragon Run1" corporationID="643668601" corporationName="Here there be Dragons" allianceID="0" allianceName="" factionID="0" factionName=""/>
-          </rowset>
-        </key>
-      </result>""", SampleIsList=true>
+    let APIKeyInfo (xmlResult:XmlEveResponse) =
+        (fun result ->
+            let rows = 
+                result?key?rowset?rows
+                |> Seq.map (fun x ->
+                    let xa = x?attributes
+                    { CharacterId = xa?characterID; 
+                        CharacterName = xa?characterName; 
+                        CorporationId = xa?corporationID; 
+                        CorporationName = xa?corporationName;
+                        AllianceId = xa?allianceID; 
+                        AllianceName = xa?allianceName; 
+                        FactionId = xa?factionID; 
+                        FactionName = xa?factionName })
+                |> List.ofSeq
+                
+            let keyAttr = result?key?attributes
+            { AccessMask = keyAttr?accessMask; 
+                Type = keyAttr?``type``; 
+                Expires = (if keyAttr?expires = "" then None else Some(keyAttr?expires)); 
+                Rows = rows })
+        |> handleResult xmlResult        
 
-    type CharactersResult = XmlProvider<"""<result>
-    <rowset name="characters" key="characterID" columns="name,characterID,corporationName,corporationID,allianceID,allianceName,factionID,factionName">
-      <row name="Alexis Prey" characterID="1365215823" corporationName="Puppies To the Rescue" corporationID="238510404" allianceID="9999" allianceName="Eve-ID Puppies Inc." factionID="666" factionName="Eve-ID Faction"/>
-      <row name="Alexis Prey" characterID="1365215823" corporationName="Puppies To the Rescue" corporationID="238510404" allianceID="9999" allianceName="Eve-ID Puppies Inc." factionID="666" factionName="Eve-ID Faction"/>
-    </rowset>
-  </result>""">
-
-    let AccountStatus xmlResult =
-        let data = AccountStatusResponse.Parse(xmlResult)
-        { PaidUntil = data.PaidUntil; CreateDate = data.CreateDate; LogonCount = data.LogonCount; LogonMinutes = data.LogonMinutes }
-
-    let APIKeyInfo xmlResult =
-        let data = APIKeyInfoResult.Parse(xmlResult)
-        
-        let rows = data.Key.Rowset.Rows 
-                    |> Seq.map (fun x -> { CharacterId = x.CharacterId; CharacterName = x.CharacterName; CorporationId = x.CorporationId; CorporationName = x.CorporationName;
-                               AllianceId = x.AllianceId; AllianceName = x.AllianceName; FactionId = x.FactionId; FactionName = x.FactionName })
-                    |> List.ofSeq
-
-        { AccessMask = data.Key.AccessMask; Type = data.Key.Type; Expires = data.Key.Expires; Rows = rows }
-
-    let Characters xmlResult =
-        let data = CharactersResult.Parse(xmlResult)
-        data.Rowset.Rows
-        |> Seq.map (fun x -> new Character(x.Name, x.CharacterId, x.CorporationId, x.CorporationName, x.AllianceId, x.AllianceName, x.FactionId, x.FactionName))
-        |> List.ofSeq
+    let Characters (xmlResult:XmlEveResponse) =
+        (fun result ->
+            result?rowset?rows
+            |> Seq.map (fun x -> new Character(x?attributes?name, 
+                                               x?attributes?characterID, 
+                                               x?attributes?corporationID, 
+                                               x?attributes?corporationName, 
+                                               x?attributes?allianceID, 
+                                               x?attributes?allianceName, 
+                                               x?attributes?factionID, 
+                                               x?attributes?factionName))
+            |> List.ofSeq)
+        |> handleResult xmlResult
