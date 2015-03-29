@@ -49,10 +49,6 @@ module internal Calls =
 
     let AccountStatus (xmlResult:XmlEveResponse) =
         (fun result ->
-            let a = result?paidUntil
-            let b= result?createDate
-            let c= result?logonCount
-            let d = result?logonMinutes
             { PaidUntil = result?paidUntil; 
               CreateDate = result?createDate; 
               LogonCount = result?logonCount; 
