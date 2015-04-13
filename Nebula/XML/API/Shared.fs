@@ -1,6 +1,9 @@
 ﻿module Nebula.XML.API.Shared
 
-open ApiTypes
+open Nebula.ApiTypes
+
+type TypeId = int
+type LocationId = int64
 
 let internal genericToString (x:obj) = 
     let t = x.GetType()

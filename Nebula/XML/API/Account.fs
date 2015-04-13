@@ -44,15 +44,16 @@ module internal Calls =
     open FSharp.Data
     open EkonBenefits.FSharp.Dynamic
     open Records
-    open ApiTypes
+    open Nebula.ApiTypes
     open Nebula.XML.API.Shared
+    open Nebula.XmlToExpando
 
     let AccountStatus (xmlResult:XmlEveResponse) =
         (fun result ->
-            { PaidUntil = result?paidUntil; 
-              CreateDate = result?createDate; 
-              LogonCount = result?logonCount; 
-              LogonMinutes = result?logonMinutes })
+            { PaidUntil = mdt result?paidUntil; 
+              CreateDate = mdt result?createDate; 
+              LogonCount = mi result?logonCount; 
+              LogonMinutes = mi result?logonMinutes })
         |> handleResult xmlResult
 
     let APIKeyInfo (xmlResult:XmlEveResponse) =
@@ -61,33 +62,33 @@ module internal Calls =
                 result?key?rowset?rows
                 |> Seq.map (fun x ->
                     let xa = x?attributes
-                    { CharacterId = xa?characterID; 
-                        CharacterName = xa?characterName; 
-                        CorporationId = xa?corporationID; 
-                        CorporationName = xa?corporationName;
-                        AllianceId = xa?allianceID; 
-                        AllianceName = xa?allianceName; 
-                        FactionId = xa?factionID; 
-                        FactionName = xa?factionName })
+                    { CharacterId = mi xa?characterID; 
+                        CharacterName = ms xa?characterName; 
+                        CorporationId = mi xa?corporationID; 
+                        CorporationName = ms xa?corporationName;
+                        AllianceId = mi xa?allianceID; 
+                        AllianceName = ms xa?allianceName; 
+                        FactionId = mi xa?factionID; 
+                        FactionName = ms xa?factionName })
                 |> List.ofSeq
                 
             let keyAttr = result?key?attributes
-            { AccessMask = keyAttr?accessMask; 
-                Type = keyAttr?``type``; 
-                Expires = (if keyAttr?expires = "" then None else Some(keyAttr?expires)); 
+            { AccessMask = mi keyAttr?accessMask; 
+                Type = ms keyAttr?``type``; 
+                Expires = (if ms keyAttr?expires = "" then None else Some(mdt keyAttr?expires)); 
                 Rows = rows })
         |> handleResult xmlResult        
 
     let Characters (xmlResult:XmlEveResponse) =
         (fun result ->
-            result?rowset?rows
-            |> Seq.map (fun x -> new Character(x?attributes?name, 
-                                               x?attributes?characterID, 
-                                               x?attributes?corporationID, 
-                                               x?attributes?corporationName, 
-                                               x?attributes?allianceID, 
-                                               x?attributes?allianceName, 
-                                               x?attributes?factionID, 
-                                               x?attributes?factionName))
+            result?characters?rows
+            |> Seq.map (fun x -> new Character(ms x?attributes?name, 
+                                               mi x?attributes?characterID, 
+                                               mi x?attributes?corporationID, 
+                                               ms x?attributes?corporationName, 
+                                               mi x?attributes?allianceID, 
+                                               ms x?attributes?allianceName, 
+                                               mi x?attributes?factionID, 
+                                               ms x?attributes?factionName))
             |> List.ofSeq)
         |> handleResult xmlResult

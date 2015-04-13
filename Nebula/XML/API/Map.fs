@@ -42,19 +42,20 @@ module internal Calls =
     open FSharp.Data
     open EkonBenefits.FSharp.Dynamic
     open Records
-    open ApiTypes
+    open Nebula.ApiTypes
     open Nebula.XML.API.Shared
+    open Nebula.XmlToExpando
 
     let FacWarSystems (xmlResult:XmlEveResponse) =
         (fun result ->
             result?rowset?rows
             |> Seq.map (fun x -> 
                 let xa = x?attributes
-                { SolarSystemId = xa?solarSystemID; 
-                    SolarSystemName = xa?solarSystemName; 
-                    OccupyingFactionId = xa?occupyingFactionID;
-                    OccupyingFactionName = xa?occupyingFactionName; 
-                    Contested = xa?contested })
+                { SolarSystemId = mi xa?solarSystemID; 
+                    SolarSystemName = ms xa?solarSystemName; 
+                    OccupyingFactionId = mi xa?occupyingFactionID;
+                    OccupyingFactionName = ms xa?occupyingFactionName; 
+                    Contested = mb xa?contested })
             |> List.ofSeq)
         |> handleResult xmlResult
 
@@ -64,11 +65,11 @@ module internal Calls =
                 result?rowset?rows
                 |> Seq.map (fun x -> 
                     let xa = x?attributes
-                    { SolarSystemId = xa?solarSystemID; 
-                        ShipJumps = xa?shipJumps })
+                    { SolarSystemId = mi xa?solarSystemID; 
+                        ShipJumps = mi xa?shipJumps })
                 |> List.ofSeq
 
-            { Jumps.DataTime = result?dataTime; 
+            { Jumps.DataTime = mdt result?dataTime; 
                 Rows = rows })
         |> handleResult xmlResult
 
@@ -78,13 +79,13 @@ module internal Calls =
                 result?rowset?rows
                 |> Seq.map (fun x -> 
                     let xa = x?attributes
-                    { SolarSystemId = xa?solarSystemID; 
-                        ShipKills = xa?shipKills; 
-                        FactionKills = xa?factionKills; 
-                        PodKills = xa?podKills})
+                    { SolarSystemId = mi xa?solarSystemID; 
+                        ShipKills = mi xa?shipKills; 
+                        FactionKills = mi xa?factionKills; 
+                        PodKills = mi xa?podKills})
                 |> List.ofSeq
 
-            { Kills.DataTime = result?dataTime; 
+            { Kills.DataTime = mdt result?dataTime; 
                 Rows = rows })
         |> handleResult xmlResult
 
@@ -94,13 +95,13 @@ module internal Calls =
                 result?rowset?rows
                 |> Seq.map (fun x -> 
                     let xa = x?attributes
-                    { SolarSystemId = xa?solarSystemID; 
-                        SolarSystemName = xa?solarSystemName; 
-                        AllianceId = xa?allianceID;
-                        FactionId = xa?factionID;
-                        CorporationId = xa?corporationID })
+                    { SolarSystemId = mi xa?solarSystemID; 
+                        SolarSystemName = ms xa?solarSystemName; 
+                        AllianceId = mi xa?allianceID;
+                        FactionId = mi xa?factionID;
+                        CorporationId = mi xa?corporationID })
                 |> List.ofSeq
 
-            { Sovereignty.DataTime = result?dataTime; 
+            { Sovereignty.DataTime = mdt result?dataTime; 
                 Rows = rows })
         |> handleResult xmlResult

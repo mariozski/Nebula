@@ -11,104 +11,217 @@ module Records =
             genericToString x
 
     type Asset = 
-        { ItemId:int64; LocationId:int64 option; TypeId:int; Quantity:int; Flag:int; 
-          Singleton:bool; RawQuantity:int option; Content:Asset list option;
+        { ItemId:int64; LocationId:LocationId option; TypeId:TypeId; Quantity:int; Flag:int; 
+          Singleton: bool; RawQuantity:int option; Content:Asset list option;
           Item:Nebula.SDE.Items.InvType option }
          override x.ToString() = 
             genericToString x
 
     type Blueprint = 
-        { ItemId:int64; LocationId:int64; TypeId:int; TypeName:string;
+        { ItemId:int64; LocationId:LocationId; TypeId:TypeId; TypeName:string;
           FlagId:int; Quantity: int; TimeEfficiency: int; MaterialEfficiency: int;
           Runs: int }
           override x.ToString() =
+            genericToString x
+    
+    
+
+    type Race =
+    | Minmatar = 0
+    | Amarr = 1
+    | Gallente = 2
+    | Caldari = 3
+
+    type Gender =
+    | Male = 0
+    | Female = 1
+
+    type Attributes = 
+        {   Intelligence:int
+            Memory:int
+            Charisma:int
+            Perception:int
+            Willpower:int }
+        override x.ToString() =
+            genericToString x
+
+    type JumpClone = 
+       { JumpCloneId:int64
+         TypeId:TypeId
+         LocationId:LocationId
+         CloneName:string }
+       override x.ToString() =
+            genericToString x
+
+    type JumpCloneImplant = 
+        {   JumpCloneId:int64
+            TypeId:TypeId
+            TypeName:string }
+        override x.ToString() =
+            genericToString x
+
+    type Implant = 
+        {   TypeId:TypeId
+            TypeName:string }
+        override x.ToString() =
+            genericToString x
+
+    type Skill = 
+        {   TypeId:TypeId
+            SkillPoints:int
+            Level:int
+            Published:int }
+        override x.ToString() =
+            genericToString x
+
+    type CharacterSheet = 
+        {   CharacterId:int64
+            Name:string
+            HomeStationId:int
+            DateOfBirth:DateTime
+            Race:Race
+            BloodLine:string
+            Ancestry:string
+            Gender:Gender
+            CorporationName:string
+            CorporationId:int64
+            AllianceName:string
+            AllianceId:int64
+            FactionName:string
+            FactionId:int64
+            FreeSkillPoints:int
+            FreeRespecs:int
+            CloneJumpDate:DateTime
+            LastRespecDate:DateTime
+            LastTimedRespec:DateTime
+            JumpActiation:DateTime
+            JumpFatigue:DateTime
+            JumpLastUpdate:DateTime
+            Balance:decimal
+            Attributes:Attributes
+            JumpClones:JumpClone list
+            JumpCloneImplants:JumpCloneImplant list
+            Implants:Implant list
+            Skills:Skill list
+            Certificates:int list }
+        override x.ToString() =
             genericToString x
 
 module internal Calls =
 
     open System
     open FSharp.Data
+    open FSharpx.Collections
+    open EkonBenefits.FSharp.Dynamic
     open Records
     open System.Xml.Linq
-
-    type AccountBalanceResult = XmlProvider<"""<result>
-    <rowset name="accounts" key="accountID" columns="accountID,accountKey,balance">
-      <row accountID="4807144" accountKey="1000" balance="209127823.31" />
-    </rowset>
-  </result>""">
-
-    type BlueprintResult = XmlProvider<"""<result>
-    <rowset name="blueprints" key="itemID" 
-            columns="itemID,locationID,typeID,typeName,flagID,quantity,timeEfficiency,materialEfficiency,runs">
-      <row itemID="1000000012172" locationID="60014506" typeID="11872" typeName="R.A.M.- Ammunition Tech Blueprint" 
-           flagID="4" quantity="-1" timeEfficiency="0" materialEfficiency="0" runs="-1" />
-      <row itemID="1000000012173" locationID="60014506" typeID="11872" typeName="R.A.M.- Ammunition Tech Blueprint" 
-           flagID="4" quantity="-1" timeEfficiency="20" materialEfficiency="10" runs="-1" />
-      <row itemID="1000000012175" locationID="60014506" typeID="808" typeName="Mjolnir Heavy Missile Blueprint" 
-           flagID="4" quantity="-2" timeEfficiency="0" materialEfficiency="10" runs="490" />
-      <row itemID="1000000012176" locationID="1015338129650" typeID="10681" typeName="125mm Railgun II Blueprint"
-           flagID="116" quantity="-2" timeEfficiency="2" materialEfficiency="3" runs="12"/>
-      <row itemID="1000000012177" locationID="1015338129650" typeID="972" typeName="Thorax Blueprint"
-           flagID="117" quantity="-2" timeEfficiency="20" materialEfficiency="10" runs="1"/>
-    </rowset>
-  </result>""">
+    open Nebula.ApiTypes
+    open Nebula.XML.API.Shared
+    open System.Collections.Generic
+    open System.Dynamic
+    open Nebula.XmlToExpando
 
     let AccountBalance xmlResult =
-
-        let data = AccountBalanceResult.Parse(xmlResult)
-        let row = data.Rowset.Row
-        { AccountId = row.AccountId; AccountKey = row.AccountKey; Balance = row.Balance }
+        (fun result ->
+            let row =
+                result?rowset?rows
+                |> List.ofSeq
+                |> List.head
+            
+            let xa = row?attributes
+            { AccountId = xa?accountID; 
+                AccountKey = xa?accountKey; 
+                Balance = xa?balance })
+        |> handleResult xmlResult
 
     let AssetList xmlResult =
-        let xn = XName.op_Implicit
-        let data = XElement.Parse(xmlResult).Element(xn "rowset")
-        let rec loadData (data: XElement) = 
-            let rows = query { for a in data.Elements(xn "row") do
-                               select { ItemId = int64(a.Attribute(xn "itemID").Value);
-                                        TypeId = int(a.Attribute(xn "typeID").Value);
-                                        Item = Nebula.SDE.Items.getItem (int64(a.Attribute(xn "typeID").Value));
-                                        RawQuantity = if a.Attribute(xn "rawQuantity") <> null then
-                                                        Some(int(a.Attribute(xn "rawQuantity").Value))
-                                                      else None;
-                                        LocationId = if a.Attribute(xn "locationID") <> null then
-                                                        Some(int64(a.Attribute(xn "locationID").Value))
-                                                     else None;
-                                        Quantity = if a.Attribute(xn "quantity") <> null then
-                                                        int(a.Attribute(xn "quantity").Value)
-                                                   else 1;
-                                        Singleton = if a.Attribute(xn "singleton") <> null then
-                                                       let at = a.Attribute(xn "singleton").Value 
-                                                       at = "1"
-                                                    else false;
-                                        Flag = if a.Attribute(xn "flag") <> null then
-                                                    int(a.Attribute(xn "flag").Value)
-                                                else 0;
-                                        Content = if a.HasElements then
-                                                    a.Element(xn "rowset")
-                                                    |> loadData
-                                                  else None } }
+        (fun result ->
+            let assetsRows = result?assets?rows
+            let rec readAssets (assets:seq<obj>) = 
+                assets
+                |> List.ofSeq
+                |> List.map 
+                    (fun asset ->
+                        let a = asset?attributes
+                        let ad = a :> IDictionary<string,obj>
+                        { ItemId = mi64 a?itemID
+                          LocationId = if ad.ContainsKey("locationID") then Some(mi64 a?locationID) else None
+                          TypeId = mi a?typeID
+                          Quantity = mi a?quantity
+                          Flag = mi a?flag
+                          Singleton = mb a?singleton
+                          RawQuantity = if ad.ContainsKey("rawQuantity") then Some(mi a?rawQuantity) else None
+                          Content = if (asset :?> IDictionary<string,obj>).ContainsKey("contents") then
+                                        Some(readAssets asset?contents?rows)
+                                    else
+                                        None
+                          Item = None }
+                    )
 
-            Some(List.ofSeq rows)
-
-        loadData data
-        
+            readAssets assetsRows)
+        |> handleResult xmlResult       
 
     let Blueprints xmlResult =
-        let data = BlueprintResult.Parse(xmlResult)
-        let rows = seq { for row in data.Rowset.Rows do 
-                         yield { ItemId = row.ItemId;
-                           LocationId = row.LocationId;
-                           TypeId = row.TypeId;
-                           TypeName = row.TypeName;
-                           FlagId = row.FlagId;
-                           Quantity = row.Quantity;
-                           TimeEfficiency = row.TimeEfficiency;
-                           MaterialEfficiency = row.MaterialEfficiency;
-                           Runs = row.Runs }
-                        }
+        (fun result ->
+            let rowset = result?rowset :> IDictionary<string, obj>
+            if not <| rowset.ContainsKey("rows") then 
+                List.empty<Blueprint>
+            else
+                [ 
+                    for row in rowset?rows do
+                    let a = row?attributes
+                    yield {
+                        ItemId = mi64 a?itemID
+                        LocationId = mi64 a?locationID
+                        TypeId = mi a?typeID
+                        TypeName = ms a?typeName
+                        FlagId = mi a?flagID
+                        Quantity = mi a?quantity
+                        TimeEfficiency = mi a?timeEfficiency
+                        MaterialEfficiency = mi a?materialEfficiency
+                        Runs = mi a?runs
+                    }
+                ])
+        |> handleResult xmlResult
 
-        rows
-        |> List.ofSeq
+    let CharacterSheet xmlResult =
+        (fun result -> 
+        {
+            CharacterId = mi64 result?characterID
+            Name = ms result?name
+            HomeStationId = mi result?homeStationID
+            DateOfBirth = mdt result?DoB
+            Race = Enum.Parse(typeof<Race>, ms result?race) :?> Race
+            BloodLine = ms result?bloodLine
+            Ancestry = ms result?ancestry
+            Gender = Enum.Parse(typeof<Gender>, ms result?gender) :?> Gender
+            CorporationName = ms result?corporationName
+            CorporationId = mi64 result?corporationID
+            AllianceName = ms result?allianceName
+            AllianceId = mi64 result?allianceID
+            FactionName = ms result?factionName
+            FactionId = mi64 result?factionID
+            FreeSkillPoints = mi result?freeSkillPoints
+            FreeRespecs = mi result?freeRespecs
+            CloneJumpDate = mdt result?cloneJumpDate
+            LastRespecDate = mdt result?lastRespecDate
+            LastTimedRespec = mdt result?lastTimedRespec
+            JumpActiation = mdt result?jumpActivation
+            JumpFatigue = mdt result?jumpFatigue
+            JumpLastUpdate = mdt result?jumpLastUpdate
+            Balance = md result?balance
+            Attributes = {  Intelligence = mi result?attributes?intelligence
+                            Memory = mi result?attributes?memory
+                            Charisma = mi result?attributes?charisma
+                            Perception = mi result?attributes?perception
+                            Willpower = mi result?attributes?willpower }
+            JumpClones = List.empty<JumpClone>
+            JumpCloneImplants = List.empty<JumpCloneImplant>
+            Implants = List.empty<Implant>
+            Skills = List.empty<Skill>
+            Certificates = List.empty<int>
+        })
+        |> handleResult xmlResult
 
 
 

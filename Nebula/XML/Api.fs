@@ -11,6 +11,7 @@ open System.Xml
 open System.Dynamic
 open System.Collections.Generic
 open ApiTypes
+open XmlToExpando
 open System.IO
 open System.Xml.Linq
 open System.Globalization
@@ -82,81 +83,7 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
                         |> List.fold (fun acc x -> acc + "||" + 
                                                    match x with
                                                    | (a, b) -> a + "|" + b) ""
-
-        let createXmlObject xml = 
-            let capitalize (text:string) =
-                Char.ToUpperInvariant(text.[0]).ToString() + text.Substring(1, text.Length - 1)
-                
-            let parseValue value : obj = 
-                let date = ref DateTime.Now
-                let int64 = ref 0L
-                let int = ref 0
-                let decimal = ref 0M
-                let bool = ref false
-
-                // check for int32
-                if Int32.TryParse(value, int) = true then
-                    int.Value :> obj
-                // check for int64
-                elif Int64.TryParse(value, int64) = true then
-                   int64.Value :> obj
-                // check for decimal
-                elif Decimal.TryParse(value, decimal) = true then
-                    decimal.Value :> obj
-                elif Boolean.TryParse(value, bool) = true then
-                    bool.Value :> obj
-                // check if date
-                elif DateTime.TryParseExact(value, "yyyy-MM-dd HH:mm:ss", CultureInfo.InvariantCulture, DateTimeStyles.None, date) = true then
-                    date.Value :> obj
-                else
-                    value :> obj
-
-            let setValue expand name value : unit = 
-                (expand :> IDictionary<string,obj>).Add(name.ToString(), parseValue value) 
-
-            let setAttribute expand name value : unit =
-                let expandDict = (expand :> IDictionary<string,obj>)
-                if not <| expandDict.ContainsKey("attributes") then
-                    expandDict.Add("attributes", ExpandoObject())
-                            
-                (expandDict.["attributes"] :?> IDictionary<string,obj>).Add(name.ToString(), parseValue value)
-
-            let rec createExpando (node:XElement) =
-                let expand = ExpandoObject()
-                for e in node.Elements() do
-                    match e.HasElements with
-                    | true -> (expand :> IDictionary<string,obj>).Add(e.Name.ToString(), createExpando e)
-                    | false -> 
-                        if e.Parent.Name.ToString().ToLower() <> "rowset" then
-                            setValue expand e.Name e.Value
-                        else
-                            let expandDict = (expand :> IDictionary<string,obj>)
-                            if not <| expandDict.ContainsKey("rows") then
-                                expandDict.Add("rows", List<obj>())
-                            
-                            (expandDict.["rows"] :?> List<obj>).Add(createExpando e)
-
-                for atr in node.Attributes() do
-                    setAttribute expand atr.Name atr.Value
-
-                expand
-
-            let xn a = XName.Get(a)
-            use sr = new StringReader(xml)
-            let xd = XDocument.Load(sr)
-#if DEBUG
-            let stopwatch = System.Diagnostics.Stopwatch.StartNew()
-#endif
-            let eveapi = xd.Element(xn "eveapi")
-            let result = { Result = Some(createExpando <| eveapi.Element(xn "result"));
-              Version = eveapi.Attribute(xn "version").Value;
-              CurrentTime = DateTime.Parse(eveapi.Element(xn "currentTime").Value);
-              CachedUntil = DateTime.Parse(eveapi.Element(xn "cachedUntil").Value);
-              Error = None }
-#if DEBUG
-            "Parsing - " + stopwatch.Elapsed.Milliseconds.ToString() + "ms" |> Console.WriteLine |> ignore
-#endif
-            result
+        
 
         match cache.Get(cacheKey) with
         | Some(result) -> result |> createXmlObject
@@ -260,38 +187,42 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     member x.MapSovereignty() =
         nonAuthenticatedCall "/map/Sovereignty.xml.aspx" emptyParams
         |> API.Map.Calls.Sovereignty
-//
-//    /// <summary>
-//    /// Returns account balance for character. Requires API key.
-//    /// </summary>
-//    /// <param name="characterId">character id</param>
-//    /// <exception cref="EveApiException"></exception>
-//    /// <exception cref="ApiKeyRequiredException"></exception>
-//    member x.CharAccountBalance (characterId:int) =
-//        authenticatedCall "/char/AccountBalance.xml.aspx" [ "characterID", string(characterId) ]
-//        |> API.Character.Calls.AccountBalance
-//
-//    /// <summary>
-//    /// Returns asset list for character. Requires API key.
-//    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
-//    /// </summary>
-//    /// <param name="characterId">character id</param>
-//    /// <exception cref="EveApiException"></exception>
-//    /// <exception cref="ApiKeyRequiredException"></exception>
-//    member x.CharAssetList (characterId:int) =
-//        authenticatedCall "/char/AssetList.xml.aspx" [ "characterID", string(characterId) ]
-//        |> API.Character.Calls.AssetList
-//
-//    /// <summary>
-//    /// Returns blueprints list for character. Requires API key.
-//    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
-//    /// </summary>
-//    /// <param name="characterId">character id</param>
-//    /// <exception cref="EveApiException"></exception>
-//    /// <exception cref="ApiKeyRequiredException"></exception>
-//    member x.CharBlueprints (characterId:int) = 
-//        authenticatedCall "char/Blueprints.xml.aspx" ["characterID", string(characterId)]
-//        |> API.Character.Calls.Blueprints
+
+    /// <summary>
+    /// Returns account balance for character. Requires API key.
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    member x.CharAccountBalance (characterId:int) =
+        authenticatedCall "/char/AccountBalance.xml.aspx" [ "characterID", string(characterId) ]
+        |> API.Character.Calls.AccountBalance
+
+    /// <summary>
+    /// Returns asset list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    member x.CharAssetList (characterId:int) =
+        authenticatedCall "/char/AssetList.xml.aspx" [ "characterID", string(characterId) ]
+        |> API.Character.Calls.AssetList
+
+    /// <summary>
+    /// Returns blueprints list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    member x.CharBlueprints (characterId:int) = 
+        authenticatedCall "char/Blueprints.xml.aspx" ["characterID", string(characterId)]
+        |> API.Character.Calls.Blueprints
+
+    member x.CharacterSheet (characterId:int) =
+        authenticatedCall "char/CharacterSheet.xml.aspx" ["characterID", string(characterId)]
+        |> API.Character.Calls.CharacterSheet
 
     /// <summary>
     /// Creates API object for querying EVE Online XML backend. Using Tranquility server by default.
@@ -314,12 +245,12 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
     /// <param name="apiKey">API key</param>
     /// <param name="apiServer">API server</param>
     new(cache:Nebula.ICache, apiKey:APIKey, apiServer:ApiServer) = Api(cache, Some(apiKey), apiServer)
-//
-//[<System.Runtime.CompilerServices.Extension>]
-//module CharacterExtensions =
-//    open System.Runtime.CompilerServices
-//
-//    let apiCast (api:obj) = api :?> Api
+
+[<System.Runtime.CompilerServices.Extension>]
+module CharacterExtensions =
+    open System.Runtime.CompilerServices
+
+    let apiCast (api:obj) = api :?> Api
 //    // C# way of adding extension methods...
 //
 //    /// <summary>
@@ -345,20 +276,20 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
 //        let api = c.Api |> apiCast 
 //        api.CharAssetList c.CharacterId
 //
-//    /// <summary>
-//    /// Returns blueprints list for character. Requires API key.
-//    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
-//    /// </summary>
-//    /// <param name="characterId">character id</param>
-//    /// <exception cref="EveApiException"></exception>
-//    /// <exception cref="ApiKeyRequiredException"></exception>
-//    [<Extension>]    
-//    let Blueprints(c:API.Account.Records.Character) =
-//        let api = c.Api |> apiCast 
-//        api.CharBlueprints c.CharacterId
+    /// <summary>
+    /// Returns blueprints list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    [<Extension>]    
+    let Blueprints(c:API.Account.Records.Character) =
+        let api = c.Api |> apiCast 
+        api.CharBlueprints c.CharacterId
 //
-//    // F# way...
-//    type Nebula.XML.API.Account.Records.Character with
+    // F# way...
+    type Nebula.XML.API.Account.Records.Character with
 //        /// <summary>
 //        /// Returns account balance for character. Requires API key.
 //        /// </summary>
@@ -380,13 +311,13 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
 //            let api = x.Api |> apiCast 
 //            api.CharAssetList x.CharacterId
 //
-//        /// <summary>
-//        /// Returns blueprints list for character. Requires API key.
-//        /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
-//        /// </summary>
-//        /// <param name="characterId">character id</param>
-//        /// <exception cref="EveApiException"></exception>
-//        /// <exception cref="ApiKeyRequiredException"></exception>
-//        member public x.Blueprints() =
-//            let api = x.Api |> apiCast 
-//            api.CharBlueprints x.CharacterId
+        /// <summary>
+        /// Returns blueprints list for character. Requires API key.
+        /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
+        /// </summary>
+        /// <param name="characterId">character id</param>
+        /// <exception cref="EveApiException"></exception>
+        /// <exception cref="ApiKeyRequiredException"></exception>
+        member public x.Blueprints() =
+            let api = x.Api |> apiCast 
+            api.CharBlueprints x.CharacterId
