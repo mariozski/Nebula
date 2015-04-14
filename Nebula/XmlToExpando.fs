@@ -15,58 +15,50 @@ let capitalize (text:string) =
 
 let xn a = XName.Get(a)
 
-type ParsedValue = 
-| StringValue of string
-| DateValue of DateTime
-| Int64Value of int64
-| IntValue of int
-| DecimalValue of decimal
-| BoolValue of bool
-
 let mi x =
     match x with
     | IntValue v -> v
-    | _ -> failwithf "Cannot match %A to int" x
+    | _          -> failwithf "Cannot match %A to int" x
 
 let mi64 x =
     match x with
-    | Int64Value v -> v
-    | IntValue v -> int64 v
+    | Int64Value v  -> v
+    | IntValue v    -> int64 v
     | _ -> failwithf "Cannot match %A to int64" x
 
 let ms x =
     match x with
     | StringValue v -> v
-    | _ as v -> v.ToString()
+    | _ as v        -> v.ToString()
 
 let md x =
     match x with
-    | DecimalValue v -> v
-    | IntValue v -> decimal v
-    | Int64Value v -> decimal v
-    | _ -> failwithf "Cannot match %A to decimal" x
+    | DecimalValue v  -> v
+    | IntValue v      -> decimal v
+    | Int64Value v    -> decimal v
+    | _               -> failwithf "Cannot match %A to decimal" x
 
 let mb x =
     match x with
-    | BoolValue v -> v
-    | IntValue v -> 
+    | BoolValue v   -> v
+    | IntValue v    -> 
         match v with
         | 0 -> false
         | _ -> true
     | StringValue v ->
         match v with
-        | "True" | "true" -> true
+        | "True" | "true"   -> true
         | "False" | "false" -> false
-        | _ -> failwithf "Cannot match %A to bool" v
+        | _                 -> failwithf "Cannot match %A to bool" v
     | _ -> failwithf "Cannot match %A to bool" x
 
 let mdt x =
     match x with 
-    | DateValue v -> v
-    | _ -> failwithf "Cannot match %A to date" x
+    | DateValue v   -> v
+    | _             -> failwithf "Cannot match %A to date" x
 
 /// Parse value from XML based on format
-let parseValue value : ParsedValue = 
+let parseValue value : Object = 
     let date = ref DateTime.Now
     let int64 = ref 0L
     let int = ref 0
@@ -86,10 +78,6 @@ let parseValue value : ParsedValue =
     else
         StringValue(value)
 
-/// set value of property for given ExpandoObject
-let setValue expand name value = 
-    (expand :> IDictionary<string,obj>).Add(name.ToString(), parseValue value)
-
 /// add 'attributes' dictionary to ExpandoObject if not present already
 /// and add parsed value there
 let setAttribute expand name value : unit =
@@ -97,34 +85,38 @@ let setAttribute expand name value : unit =
     if not <| expandDict.ContainsKey("attributes") then
         expandDict.Add("attributes", ExpandoObject())
                             
-    (expandDict.["attributes"] :?> IDictionary<string,obj>).Add(name.ToString(), parseValue value)
+    (expandDict.["attributes"] :?> IDictionary<string,obj>).Add(name.ToString(), Some <| parseValue value)
 
 /// create ExpandoObject from XElement
 /// support rowset and rows collections as list<obj>
-let rec createExpando (node:XElement) =
-    let expando = ExpandoObject()
-    for e in node.Elements() do
-        if e.Parent.Name.ToString().ToLower() <> "rowset" then
-            let name = if not <| (e.Attribute(xn "name") = null) then
-                            e.Attribute(xn "name").Value
-                       else
-                            e.Name.ToString()
+let rec createContent (node:XElement) : Object =
+    let elements = 
+        [ for e in node.Elements() do 
+            match e.Parent.Name.ToString().ToLower() with
+            | "rowset" -> yield ("rows", createContent e)
+            | _ ->
+                let name = match e.Attribute(xn "name") with
+                           | null -> e.Name.ToString()
+                           | v -> e.Attribute(xn "name").Value
 
-            if e.HasElements then
-                (expando :> IDictionary<string,obj>).Add(name, createExpando e)
-            else
-                setValue expando name e.Value
-        else
-            let expandDict = (expando :> IDictionary<string,obj>)
-            if not <| expandDict.ContainsKey("rows") then
-                expandDict.Add("rows", List<obj>())
-                            
-            (expandDict.["rows"] :?> List<obj>).Add(createExpando e)
+                match e.HasElements with
+                | true -> yield (name, createContent e)
+                | false -> yield (name, parseValue e.Value) ]
+        
+    let attributes =
+        ("attr", [ for atr in node.Attributes() do  
+                        yield (atr.Name.ToString(), parseValue atr.Value) ]
+                   |> Map.ofList
+                   |> MapValue)
 
-    for atr in node.Attributes() do
-        setAttribute expando atr.Name atr.Value
-
-    expando
+    attributes :: elements
+    |> Seq.groupBy (fun x -> fst x)
+    |> Seq.map (fun x -> 
+        (fst x, match snd x |> Seq.map (fun y -> snd y) |> List.ofSeq with
+                | head::[] -> if fst x = "rows" then ListValue [ head ] else head
+                | array -> ListValue array))
+    |> Map.ofSeq
+    |> MapValue
 
 /// create XmlEveResponse from xml response from
 /// Eve Api server
@@ -135,7 +127,7 @@ let createXmlObject xml =
     let stopwatch = System.Diagnostics.Stopwatch.StartNew()
 #endif
     let eveapi = xd.Element(xn "eveapi")
-    let result = { Result = Some(createExpando <| eveapi.Element(xn "result"));
+    let result = { Result = Some(createContent <| eveapi.Element(xn "result"));
         Version = eveapi.Attribute(xn "version").Value;
         CurrentTime = DateTime.Parse(eveapi.Element(xn "currentTime").Value);
         CachedUntil = DateTime.Parse(eveapi.Element(xn "cachedUntil").Value);

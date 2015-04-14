@@ -42,7 +42,6 @@ module internal Calls =
 
     open System
     open FSharp.Data
-    open EkonBenefits.FSharp.Dynamic
     open Records
     open Nebula.ApiTypes
     open Nebula.XML.API.Shared
@@ -59,9 +58,9 @@ module internal Calls =
     let APIKeyInfo (xmlResult:XmlEveResponse) =
         (fun result ->
             let rows = 
-                result?key?rowset?rows
+                result?key?characters?>"rows"
                 |> Seq.map (fun x ->
-                    let xa = x?attributes
+                    let xa = x?attr
                     { CharacterId = mi xa?characterID; 
                         CharacterName = ms xa?characterName; 
                         CorporationId = mi xa?corporationID; 
@@ -72,7 +71,7 @@ module internal Calls =
                         FactionName = ms xa?factionName })
                 |> List.ofSeq
                 
-            let keyAttr = result?key?attributes
+            let keyAttr = result?key?attr
             { AccessMask = mi keyAttr?accessMask; 
                 Type = ms keyAttr?``type``; 
                 Expires = (if ms keyAttr?expires = "" then None else Some(mdt keyAttr?expires)); 
@@ -81,14 +80,15 @@ module internal Calls =
 
     let Characters (xmlResult:XmlEveResponse) =
         (fun result ->
-            result?characters?rows
-            |> Seq.map (fun x -> new Character(ms x?attributes?name, 
-                                               mi x?attributes?characterID, 
-                                               mi x?attributes?corporationID, 
-                                               ms x?attributes?corporationName, 
-                                               mi x?attributes?allianceID, 
-                                               ms x?attributes?allianceName, 
-                                               mi x?attributes?factionID, 
-                                               ms x?attributes?factionName))
+            result?characters?>"rows"
+            |> Seq.map (fun x -> 
+                            new Character(ms x?attr?name, 
+                                            mi x?attr?characterID, 
+                                            mi x?attr?corporationID, 
+                                            ms x?attr?corporationName, 
+                                            mi x?attr?allianceID, 
+                                            ms x?attr?allianceName, 
+                                            mi x?attr?factionID, 
+                                            ms x?attr?factionName))
             |> List.ofSeq)
         |> handleResult xmlResult

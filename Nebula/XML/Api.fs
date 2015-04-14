@@ -251,31 +251,31 @@ module CharacterExtensions =
     open System.Runtime.CompilerServices
 
     let apiCast (api:obj) = api :?> Api
-//    // C# way of adding extension methods...
-//
-//    /// <summary>
-//    /// Returns account balance for character. Requires API key.
-//    /// </summary>
-//    /// <param name="characterId">character id</param>
-//    /// <exception cref="EveApiException"></exception>
-//    /// <exception cref="ApiKeyRequiredException"></exception>
-//    [<Extension>]
-//    let AccountBalance(c : API.Account.Records.Character) = 
-//        let api = c.Api |> apiCast 
-//        api.CharAccountBalance c.CharacterId    
-//        
-//    /// <summary>
-//    /// Returns asset list for character. Requires API key.
-//    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
-//    /// </summary>
-//    /// <param name="characterId">character id</param>
-//    /// <exception cref="EveApiException"></exception>
-//    /// <exception cref="ApiKeyRequiredException"></exception>
-//    [<Extension>]    
-//    let AssetList(c:API.Account.Records.Character) =
-//        let api = c.Api |> apiCast 
-//        api.CharAssetList c.CharacterId
-//
+    // C# way of adding extension methods...
+
+    /// <summary>
+    /// Returns account balance for character. Requires API key.
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    [<Extension>]
+    let AccountBalance(c : API.Account.Records.Character) = 
+        let api = c.Api |> apiCast 
+        api.CharAccountBalance c.CharacterId    
+        
+    /// <summary>
+    /// Returns asset list for character. Requires API key.
+    /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
+    /// </summary>
+    /// <param name="characterId">character id</param>
+    /// <exception cref="EveApiException"></exception>
+    /// <exception cref="ApiKeyRequiredException"></exception>
+    [<Extension>]    
+    let AssetList(c:API.Account.Records.Character) =
+        let api = c.Api |> apiCast 
+        api.CharAssetList c.CharacterId
+
     /// <summary>
     /// Returns blueprints list for character. Requires API key.
     /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints
@@ -287,30 +287,30 @@ module CharacterExtensions =
     let Blueprints(c:API.Account.Records.Character) =
         let api = c.Api |> apiCast 
         api.CharBlueprints c.CharacterId
-//
+
     // F# way...
     type Nebula.XML.API.Account.Records.Character with
-//        /// <summary>
-//        /// Returns account balance for character. Requires API key.
-//        /// </summary>
-//        /// <param name="characterId">character id</param>
-//        /// <exception cref="EveApiException"></exception>
-//        /// <exception cref="ApiKeyRequiredException"></exception>
-//        member public x.AccountBalance() =
-//            let api = x.Api |> apiCast 
-//            api.CharAccountBalance x.CharacterId
-//        
-//        /// <summary>
-//        /// Returns asset list for character. Requires API key.
-//        /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
-//        /// </summary>
-//        /// <param name="characterId">character id</param>
-//        /// <exception cref="EveApiException"></exception>
-//        /// <exception cref="ApiKeyRequiredException"></exception>
-//        member public x.AssetList() =
-//            let api = x.Api |> apiCast 
-//            api.CharAssetList x.CharacterId
-//
+        /// <summary>
+        /// Returns account balance for character. Requires API key.
+        /// </summary>
+        /// <param name="characterId">character id</param>
+        /// <exception cref="EveApiException"></exception>
+        /// <exception cref="ApiKeyRequiredException"></exception>
+        member public x.AccountBalance() =
+            let api = x.Api |> apiCast 
+            api.CharAccountBalance x.CharacterId
+        
+        /// <summary>
+        /// Returns asset list for character. Requires API key.
+        /// For detailed explanation of field values go to: https://neweden-dev.com/Char/AssetList
+        /// </summary>
+        /// <param name="characterId">character id</param>
+        /// <exception cref="EveApiException"></exception>
+        /// <exception cref="ApiKeyRequiredException"></exception>
+        member public x.AssetList() =
+            let api = x.Api |> apiCast 
+            api.CharAssetList x.CharacterId
+
         /// <summary>
         /// Returns blueprints list for character. Requires API key.
         /// For detailed explanation of field values go to: https://neweden-dev.com/Char/Blueprints

@@ -40,7 +40,6 @@ module Records =
 module internal Calls =
     open System
     open FSharp.Data
-    open EkonBenefits.FSharp.Dynamic
     open Records
     open Nebula.ApiTypes
     open Nebula.XML.API.Shared
@@ -48,9 +47,9 @@ module internal Calls =
 
     let FacWarSystems (xmlResult:XmlEveResponse) =
         (fun result ->
-            result?rowset?rows
+            result?solarSystems?>"rows"
             |> Seq.map (fun x -> 
-                let xa = x?attributes
+                let xa = x?attr
                 { SolarSystemId = mi xa?solarSystemID; 
                     SolarSystemName = ms xa?solarSystemName; 
                     OccupyingFactionId = mi xa?occupyingFactionID;
@@ -62,9 +61,9 @@ module internal Calls =
     let Jumps (xmlResult:XmlEveResponse) : Jumps =
         (fun result ->
             let rows = 
-                result?rowset?rows
+                result?solarSystems?>"rows"
                 |> Seq.map (fun x -> 
-                    let xa = x?attributes
+                    let xa = x?attr
                     { SolarSystemId = mi xa?solarSystemID; 
                         ShipJumps = mi xa?shipJumps })
                 |> List.ofSeq
@@ -76,9 +75,9 @@ module internal Calls =
     let Kills (xmlResult:XmlEveResponse) : Kills =
         (fun result ->
             let rows = 
-                result?rowset?rows
+                result?solarSystems?>"rows"
                 |> Seq.map (fun x -> 
-                    let xa = x?attributes
+                    let xa = x?attr
                     { SolarSystemId = mi xa?solarSystemID; 
                         ShipKills = mi xa?shipKills; 
                         FactionKills = mi xa?factionKills; 
@@ -92,9 +91,9 @@ module internal Calls =
     let Sovereignty (xmlResult:XmlEveResponse) : Sovereignty =
         (fun result ->
             let rows = 
-                result?rowset?rows
+                result?solarSystems?>"rows"
                 |> Seq.map (fun x -> 
-                    let xa = x?attributes
+                    let xa = x?attr
                     { SolarSystemId = mi xa?solarSystemID; 
                         SolarSystemName = ms xa?solarSystemName; 
                         AllianceId = mi xa?allianceID;
