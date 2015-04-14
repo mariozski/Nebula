@@ -1,13 +1,11 @@
 ﻿module Nebula.Test.Api
 
+open Nebula.ApiTypes
 open Nebula.XmlToExpando
 open Xunit
 open FsCheck.Xunit
 open System
-open System.Dynamic
 open System.Collections.Generic
-open EkonBenefits.FSharp.Dynamic
-
 
 // ------------------------------------------
 // value parser tests             
@@ -16,82 +14,87 @@ open EkonBenefits.FSharp.Dynamic
 [<Fact>]
 let ``yyyy-MM-dd HH:mm:ss should be date``() =
     let v = parseValue "2014-01-01 00:00:00"
-    Assert.IsType(typeof<DateTime>, v)
-    Assert.Equal(DateTime(2014,1,1), v :?> DateTime)
+    Assert.Equal(
+        DateTime(2014,1,1), 
+        match v with
+        | DateValue(x) -> x
+        | _ -> DateTime.MinValue)
 
 // there are cases of such solar systems names
 [<Fact>]
 let ``MM-yyyy should be string``() =
     let date = "05-2000"
     let v = parseValue date
-    Assert.IsType(typeof<string>, v)
-    Assert.Equal(date, v :?> string)
+    Assert.Equal(
+        date, 
+        match v with 
+        | StringValue(x) -> x
+        | _ -> String.Empty)
 
 [<Fact>]
 let ``0.12 should be decimal``() =
     let v = parseValue "0.12"
-    Assert.IsType(typeof<decimal>, v)
-    Assert.Equal(0.12m, v :?> decimal)
+    Assert.Equal(
+        0.12m, 
+        match v with
+        | DecimalValue(x) -> x
+        | _ -> 0m)
 
 [<Fact>]
 let ``2.0 should be decimal``() =
     let v = parseValue "2.0"
-    Assert.IsType(typeof<decimal>, v)
-    Assert.Equal(2.0m, v :?> decimal)
+    Assert.Equal(
+        2.0m, 
+        match v with
+        | DecimalValue x -> x
+        | _ -> 0m)
 
 [<Fact>]
 let ``554 should be int``() =
     let v = parseValue "554"
-    Assert.IsType(typeof<int32>, v)
-    Assert.Equal(554, v :?> int32)
+    Assert.Equal(554, 
+        match v with
+        | IntValue x -> x
+        | _ -> 0)
 
 [<Fact>]
 let ``0 should be int``() =
     let v = parseValue "0"
-    Assert.IsType(typeof<int32>, v)
-    Assert.Equal(0, v :?> int32)
+    Assert.Equal(0, 
+        match v with
+        | IntValue x -> x
+        | _ -> -1)
 
 [<Fact>]
 let ``1111111111232 should be int64``() =
     let v = parseValue "1111111111232"
-    Assert.IsType(typeof<int64>, v)
-    Assert.Equal(1111111111232L, v :?> int64)
+    Assert.Equal(1111111111232L, 
+        match v with
+        | Int64Value x -> x
+        | _ -> 0L)
 
 [<Fact>]
 let ``True or False should be boolean``() =
     let t = parseValue "True"
     let f = parseValue "False"
-    Assert.IsType(typeof<bool>, t)
-    Assert.IsType(typeof<bool>, f)
-    Assert.Equal(true, t :?> bool)
-    Assert.Equal(false, f :?> bool)
+    Assert.Equal(true, 
+        match t with
+        | BoolValue x -> x
+        | _ -> false)
+    Assert.Equal(false, 
+        match f with
+        | BoolValue x -> x
+        | _ -> true)
 
 [<Fact>]
 let ``00-1AB should be string``() =
     let v = parseValue "00-1AB"
-    Assert.IsType(typeof<string>, v)
-    Assert.Equal("00-1AB", v :?> string)
+    Assert.Equal("00-1AB", 
+        match v with
+        | StringValue x -> x
+        | _ -> String.Empty)
 
 [<Fact>]
 let ``capitalize should make first char of string capital``() =
     let a = capitalize "one two"
     Assert.Equal("One two", a)
-
-// --------------------------------
-// expando operations tests
-// --------------------------------
-[<Fact>]
-let ``setValue should set property of expando with proper value``() =
-    let e = ExpandoObject()
-    setValue e "test" "0.12"
-    let containsKey = (e :> IDictionary<string, obj>).ContainsKey("test")
-    Assert.True(containsKey)
-    Assert.Equal(0.12m, e?test)
-
-[<Fact>]
-let ``setAttribute should set property of expando with attributes dict and proper value``() =
-    let e = ExpandoObject()
-    setAttribute e "test" "0.12"
-    Assert.True((e :> IDictionary<string, obj>).ContainsKey("attributes"))
-    Assert.True((e?attributes :> IDictionary<string, obj>).ContainsKey("test"))
-    Assert.Equal(0.12m, e?attributes?test)
