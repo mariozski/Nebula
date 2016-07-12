@@ -53,14 +53,14 @@ module Records =
         override x.ToString() = genericToString x
     
     type JumpClone = 
-        { JumpCloneId : int64
+        { JumpCloneId : int
           TypeId : TypeId
           LocationId : LocationId
           CloneName : string }
         override x.ToString() = genericToString x
     
     type JumpCloneImplant = 
-        { JumpCloneId : int64
+        { JumpCloneId : int
           TypeId : TypeId
           TypeName : string }
         override x.ToString() = genericToString x
@@ -76,14 +76,28 @@ module Records =
           Level : int
           Published : int }
         override x.ToString() = genericToString x
+
+    type Certificate =
+        { CertificateId : int }
+        override x.ToString() = genericToString x
+
+    type CorporationRole = 
+        { RoleId : int64
+          RoleName : string }
     
+    type CorporationTitle = 
+        { TitleId : int
+          TitleName : string }
+
     type CharacterSheet = 
         { CharacterId : int64
           Name : string
-          HomeStationId : int
+          HomeStationId : int64
           DateOfBirth : DateTime
           Race : Race
+          BloodLineId : int64
           BloodLine : string
+          AncestryId : int64
           Ancestry : string
           Gender : Gender
           CorporationName : string
@@ -92,7 +106,7 @@ module Records =
           AllianceId : int64
           FactionName : string
           FactionId : int64
-          FreeSkillPoints : int
+          FreeSkillPoints : int64
           FreeRespecs : int
           CloneJumpDate : DateTime
           LastRespecDate : DateTime
@@ -106,7 +120,12 @@ module Records =
           JumpCloneImplants : JumpCloneImplant list
           Implants : Implant list
           Skills : Skill list
-          Certificates : int list }
+          Certificates : Certificate list
+          CorporationRoles : CorporationRole list
+          CorporationRolesAtHq : CorporationRole list
+          CorporationRolesAtBase : CorporationRole list
+          CorporationRolesAtOther : CorporationRole list
+          CorporationTitles : CorporationTitle list }
         override x.ToString() = genericToString x
 
 module internal Calls = 
@@ -145,7 +164,7 @@ module internal Calls =
                          LocationId = match a?locationID with
                                       | Int64Value v -> Some(v)
                                       | _            -> None
-                         TypeId = mi a?typeID
+                         TypeId = mi64 a?typeID
                          Quantity = mi a?quantity
                          Flag = mi a?flag
                          Singleton = mb a?singleton
@@ -164,7 +183,7 @@ module internal Calls =
                     let a = row?attr
                     yield { ItemId = mi64 a?itemID
                             LocationId = mi64 a?locationID
-                            TypeId = mi a?typeID
+                            TypeId = mi64 a?typeID
                             TypeName = ms a?typeName
                             FlagId = mi a?flagID
                             Quantity = mi a?quantity
@@ -177,10 +196,12 @@ module internal Calls =
         (fun result -> 
             { CharacterId = mi64 result?characterID
               Name = ms result?name
-              HomeStationId = mi result?homeStationID
+              HomeStationId = mi64 result?homeStationID
               DateOfBirth = mdt result?DoB
               Race = Enum.Parse(typeof<Race>, ms result?race) :?> Race
+              BloodLineId = mi64 result?bloodLineID
               BloodLine = ms result?bloodLine
+              AncestryId = mi64 result?ancestryID
               Ancestry = ms result?ancestry
               Gender = Enum.Parse(typeof<Gender>, ms result?gender) :?> Gender
               CorporationName = ms result?corporationName
@@ -189,7 +210,7 @@ module internal Calls =
               AllianceId = mi64 result?allianceID
               FactionName = ms result?factionName
               FactionId = mi64 result?factionID
-              FreeSkillPoints = mi result?freeSkillPoints
+              FreeSkillPoints = mi64 result?freeSkillPoints
               FreeRespecs = mi result?freeRespecs
               CloneJumpDate = mdt result?cloneJumpDate
               LastRespecDate = mdt result?lastRespecDate
@@ -204,18 +225,41 @@ module internal Calls =
                     Charisma = mi result?attributes?charisma
                     Perception = mi result?attributes?perception
                     Willpower = mi result?attributes?willpower }
-              JumpClones = [ for jc in result?>"jumpClones" do
-                                yield { JumpCloneId = mi64 jc?attr?jumpCloneID
-                                        TypeId = mi jc?attr?typeID
-                                        LocationId = mi64 jc?attr?locationID
-                                        CloneName = ms jc?attr?typeName } ]
+              JumpClones = 
+                [ for jc in result?>"jumpClones" do
+                    yield { JumpCloneId = mi jc?attr?jumpCloneID
+                            TypeId = mi64 jc?attr?typeID
+                            LocationId = mi64 jc?attr?locationID
+                            CloneName = ms jc?attr?typeName } ]
               JumpCloneImplants = List.empty<JumpCloneImplant>
               Implants = List.empty<Implant>
               Skills = 
-                  [ for skill in result?skills?>"rows" do
-                        yield { TypeId = mi skill?attr?typeID
-                                SkillPoints = mi skill?attr?skillpoints
-                                Level = mi skill?attr?level
-                                Published = mi skill?attr?published } ]
-              Certificates = List.empty<int> })
+                [ for skill in result?skills?>"rows" do
+                    yield { TypeId = mi64 skill?attr?typeID
+                            SkillPoints = mi skill?attr?skillpoints
+                            Level = mi skill?attr?level
+                            Published = mi skill?attr?published } ]
+              Certificates = 
+                [ for certificate in result?certificates?>"rows" do
+                    yield { CertificateId = mi certificate?attr?certificateID } ]
+              CorporationRoles = 
+                [ for role in result?corporationRoles?>"rows" do
+                    yield { RoleId = mi64 role?attr?roleID
+                            RoleName = ms role?attr?roleName } ]
+              CorporationRolesAtHq = 
+                [ for role in result?corporationRolesAtHq?>"rows" do
+                    yield { RoleId = mi64 role?attr?roleID
+                            RoleName = ms role?attr?roleName } ]
+              CorporationRolesAtBase = 
+                [ for role in result?corporationRolesAtBase?>"rows" do
+                    yield { RoleId = mi64 role?attr?roleID
+                            RoleName = ms role?attr?roleName } ]
+              CorporationRolesAtOther = 
+                [ for role in result?corporationRolesAtOther?>"rows" do
+                    yield { RoleId = mi64 role?attr?roleID
+                            RoleName = ms role?attr?roleName } ]
+              CorporationTitles = 
+                [ for title in result?corporationTitles?>"rows" do
+                    yield { TitleId = mi title?attr?titleID
+                            TitleName = ms title?attr?titleName } ] })
         |> handleResult xmlResult
