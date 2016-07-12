@@ -33,6 +33,26 @@ module Records =
           MaterialEfficiency : int
           Runs : int }
         override x.ToString() = genericToString x
+
+    type Bookmark =
+        { BookmarkId : int
+          CreatorId : int64
+          Created : DateTime
+          ItemId : int64
+          TypeId : TypeId
+          LocationId : LocationId
+          X : decimal
+          Y : decimal
+          Z : decimal
+          Memo : string
+          Note : string }  
+         override x.ToString() = genericToString x  
+
+    type BookmarkFolder = 
+        { FolderId : int
+          FolderName : string
+          Bookmarks : Bookmark list }
+        override x.ToString() = genericToString x
     
     type Race = 
         | Minmatar = 0
@@ -84,10 +104,12 @@ module Records =
     type CorporationRole = 
         { RoleId : int64
           RoleName : string }
+        override x.ToString() = genericToString x
     
     type CorporationTitle = 
         { TitleId : int
           TitleName : string }
+        override x.ToString() = genericToString x
 
     type CharacterSheet = 
         { CharacterId : int64
@@ -175,6 +197,26 @@ module internal Calls =
                          Item = None })
 
             readAssets assetsRows)
+        |> handleResult xmlResult
+
+    let Bookmarks xmlResult = 
+        (fun result ->
+            [ for folder in result?folders?>"rows" do
+                yield { FolderId = mi folder?attr?folderID
+                        FolderName = "test"
+                        Bookmarks = 
+                            [ for bookmark in folder?bookmarks?>"rows" do
+                                yield { BookmarkId = mi bookmark?attr?bookmarkID
+                                        CreatorId = mi64 bookmark?attr?creatorID
+                                        Created = mdt bookmark?attr?created
+                                        ItemId = mi64 bookmark?attr?itemID
+                                        TypeId = mi64 bookmark?attr?typeID
+                                        LocationId = mi64 bookmark?attr?locationID
+                                        X = md bookmark?attr?x
+                                        Y = md bookmark?attr?y
+                                        Z = md bookmark?attr?z
+                                        Memo = ms bookmark?attr?memo
+                                        Note = ms bookmark?attr?note }]}])
         |> handleResult xmlResult
     
     let Blueprints xmlResult = 

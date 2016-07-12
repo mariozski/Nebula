@@ -23,17 +23,6 @@ type ApiServer =
     | Tranquility = 0
     | Singularity = 1
 
-type ApiResponse = XmlProvider<"""<root><eveapi version="2">
-                                        <currentTime>2010-10-05 20:28:28</currentTime>
-                                        <result></result>
-                                        <cachedUntil>2010-10-05 20:28:28</cachedUntil>
-                                   </eveapi>
-                                   <eveapi version="2">
-                                        <currentTime>2010-10-05 20:28:28</currentTime>
-                                        <error code="106">Must provide userID or keyID parameter for authentication.</error>
-                                        <cachedUntil>2010-10-05 20:28:28</cachedUntil>
-                                   </eveapi></root>""", SampleIsList=true>
-
 /// <summary>
 /// This class is main class in the library allowing to
 /// connect to EVE Online API (XML) and operate on it's methods.
@@ -224,6 +213,10 @@ type Api(cache:Nebula.ICache, apiKey:APIKey option, apiServer:ApiServer) =
         authenticatedCall "char/CharacterSheet.xml.aspx" ["characterID", string(characterId)]
         |> API.Character.Calls.CharacterSheet
 
+    member x.CharBookmarks (characterId:int) =
+        authenticatedCall "char/Bookmarks.xml.aspx" ["characterID", string(characterId)]
+        |> API.Character.Calls.Bookmarks
+
     /// <summary>
     /// Creates API object for querying EVE Online XML backend. Using Tranquility server by default.
     /// Some methods will throw <see cref="ApiKeyRequiredException">ApiKeyRequiredException</see> if they require API key to be executed.
@@ -287,6 +280,8 @@ module CharacterExtensions =
     let Blueprints(c:API.Account.Records.Character) =
         let api = c.Api |> apiCast 
         api.CharBlueprints c.CharacterId
+
+
 
     // F# way...
     type Nebula.XML.API.Account.Records.Character with

@@ -11,13 +11,13 @@ module Records =
             genericToString x
 
     type APIKeyInfoRow = 
-        { CharacterId:int; CharacterName:string; CorporationId:int; CorporationName:string;
-          AllianceId:int; AllianceName:string; FactionId:int; FactionName:string }
+        { CharacterId:int64; CharacterName:string; CorporationId:int64; CorporationName:string;
+          AllianceId:int64; AllianceName:string; FactionId:int64; FactionName:string }
         override x.ToString() = 
             genericToString x
 
     type APIKeyInfo = 
-        { AccessMask:int; ``Type``:string; Expires:DateTime option; Rows:APIKeyInfoRow list } 
+        { AccessMask:int64; ``Type``:string; Expires:DateTime option; Rows:APIKeyInfoRow list } 
         override x.ToString() = 
             genericToString x
 
@@ -61,18 +61,18 @@ module internal Calls =
                 result?key?characters?>"rows"
                 |> Seq.map (fun x ->
                     let xa = x?attr
-                    { CharacterId = mi xa?characterID; 
+                    { CharacterId = mi64 xa?characterID; 
                         CharacterName = ms xa?characterName; 
-                        CorporationId = mi xa?corporationID; 
+                        CorporationId = mi64 xa?corporationID; 
                         CorporationName = ms xa?corporationName;
-                        AllianceId = mi xa?allianceID; 
+                        AllianceId = mi64 xa?allianceID; 
                         AllianceName = ms xa?allianceName; 
-                        FactionId = mi xa?factionID; 
+                        FactionId = mi64 xa?factionID; 
                         FactionName = ms xa?factionName })
                 |> List.ofSeq
                 
             let keyAttr = result?key?attr
-            { AccessMask = mi keyAttr?accessMask; 
+            { AccessMask = mi64 keyAttr?accessMask; 
                 Type = ms keyAttr?``type``; 
                 Expires = (if ms keyAttr?expires = "" then None else Some(mdt keyAttr?expires)); 
                 Rows = rows })
