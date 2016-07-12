@@ -2,7 +2,7 @@
 
 open Nebula.ApiTypes
 
-type TypeId = int
+type TypeId = int64
 type LocationId = int64
 
 let internal genericToString (x:obj) = 
