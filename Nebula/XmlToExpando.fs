@@ -132,11 +132,19 @@ let createXmlObject xml =
     let stopwatch = System.Diagnostics.Stopwatch.StartNew()
 #endif
     let eveapi = xd.Element(xn "eveapi")
-    let result = { Result = Some(createContent <| eveapi.Element(xn "result"));
-        Version = eveapi.Attribute(xn "version").Value;
-        CurrentTime = DateTime.Parse(eveapi.Element(xn "currentTime").Value);
-        CachedUntil = DateTime.Parse(eveapi.Element(xn "cachedUntil").Value);
-        Error = None }
+    let error = match eveapi.Element(xn "error") with
+                  | null -> None
+                  | v  -> 
+                    Some({ Code = v.Attribute(xn "code").Value |> int
+                           Message = v.Value })
+    let result = 
+        { Result = match error with
+                   | None -> Some(createContent <| eveapi.Element(xn "result"))
+                   | _ -> None
+          Version = eveapi.Attribute(xn "version").Value
+          CurrentTime = DateTime.Parse(eveapi.Element(xn "currentTime").Value)
+          CachedUntil = DateTime.Parse(eveapi.Element(xn "cachedUntil").Value)
+          Error = error }
 #if DEBUG
     "Parsing - " + stopwatch.Elapsed.Milliseconds.ToString() + "ms" |> Console.WriteLine |> ignore
 #endif
