@@ -18,17 +18,20 @@ let xn a = XName.Get(a)
 let mi x =
     match x with
     | IntValue v -> v
+    | Empty v -> Int32.MinValue
     | _          -> failwithf "Cannot match %A to int" x
 
 let mi64 x =
     match x with
     | Int64Value v  -> v
     | IntValue v    -> int64 v
+    | Empty v -> Int64.MinValue
     | _ -> failwithf "Cannot match %A to int64" x
 
 let ms x =
     match x with
     | StringValue v -> v
+    | Empty v -> String.Empty
     | _ as v        -> v.ToString()
 
 let md x =
@@ -36,6 +39,7 @@ let md x =
     | DecimalValue v  -> v
     | IntValue v      -> decimal v
     | Int64Value v    -> decimal v
+    | Empty v -> Decimal.MinValue
     | _               -> failwithf "Cannot match %A to decimal" x
 
 let mb x =
@@ -55,6 +59,7 @@ let mb x =
 let mdt x =
     match x with 
     | DateValue v   -> v
+    | Empty v -> DateTime.MinValue
     | _             -> failwithf "Cannot match %A to date" x
 
 /// Parse value from XML based on format
